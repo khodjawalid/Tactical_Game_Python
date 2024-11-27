@@ -7,6 +7,7 @@ WIDTH = 10 * 50  # 10 cases de 50 pixels
 HEIGHT = 10 * 50  # 10 cases de 50 pixels
 CELL_SIZE = 50  # Taille de chaque case (50x50 pixels)
 
+####
 
 class Game:
     """
