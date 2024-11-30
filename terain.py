@@ -41,18 +41,17 @@ class Terrain:
         for x in range(self.largeur):
             ligne = []
             for y in range(self.hauteur):
-                # Générer une case aléatoire (50% de chances pour un obstacle, eau ou feu)
                 case_type = random.choice(['traversable', 'obstacle', 'eau', 'feu'])
                 
-                # Vous pouvez ajuster les probabilités ici si nécessaire
-                if random.random() < 0.1:  # 10% de chances d'être un obstacle
+               
+                if random.random() < 0.05:  # 
                     case_type = 'obstacle'
-                elif random.random() < 0.05:  # 20% de chances d'être de l'eau
+                elif random.random() < 0.05:  
                     case_type = 'eau'
-                elif random.random() < 0.05:  # 30% de chances d'être du feu
+                elif random.random() < 0.05:  
                     case_type = 'feu'
                 else:
-                    case_type = 'traversable'  # 40% de chances d'être traversable
+                    case_type = 'traversable'  
 
                 # Créer une nouvelle case avec le type sélectionné
                 nouvelle_case = Case(case_type, x, y)

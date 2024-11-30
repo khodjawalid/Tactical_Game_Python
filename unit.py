@@ -1,5 +1,7 @@
+import os
 import pygame
 import random
+from game import *
 
 # Constantes
 GRID_SIZE = 8
@@ -14,6 +16,7 @@ BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 
 
+image_path = r"C:\Users\cheml\Desktop\POO 2\POO\image"
 class Unit:
     """
     Classe pour représenter une unité.
@@ -105,26 +108,91 @@ class Unit:
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
             target.health -= self.attack_power
 
-    def draw(self, screen):
-        """Affiche l'unité sur l'écran."""
-    # Définir la couleur en fonction de l'équipe
-        color = BLUE if self.team == 'player' else RED
-
-    # Dessiner un carré vert si l'unité est sélectionnée
-        if self.is_selected:
-            pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-
-    # Dessiner un cercle représentant l'unité
-    # On place le cercle au centre de la case, avec un rayon proportionnel à la taille de la cellule
-        pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+    def draw(self, surface):
+            # """Dessiner l'unité avec une image si disponible, sinon dessiner un cercle."""
+        if self.image:  # Si l'image est disponible
+            surface.blit(self.image, (self.x * CELL_SIZE, self.y * CELL_SIZE))
+        else:  # Sinon, dessiner un cercle
+            color = BLUE if self.team == 'player' else RED
+            pygame.draw.circle(surface, color, (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
 
 
 
-    # def draw(self, screen):
-    #     """Affiche l'unité sur l'écran."""
-    #     color = BLUE if self.team == 'player' else RED
-    #     if self.is_selected:
-    #         pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
-    #                          self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-    #     pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
-    #                        2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+
+
+class Type_Unite(Unit):  # Héritage de la classe Unit
+    def __init__(self, nom, x, y, health, attack_power, team, defense, vitesse, competences=None, image_path=None):
+        super().__init__(x, y, health, attack_power, team)
+        self.nom = nom
+        self.defense = defense
+        self.vitesse = vitesse
+        self.competences = competences if competences else []
+
+        # Chargement de l'image (fichiers dans le même répertoire)
+        if image_path:
+            try:
+                self.image = pygame.image.load(image_path)
+                self.image = pygame.transform.scale(self.image, (CELL_SIZE, CELL_SIZE))
+            except pygame.error as e:
+                print(f"Erreur lors du chargement de l'image {image_path}: {e}")
+                self.image = None
+        else:
+            print(f"Aucun chemin d'image fourni pour {nom}.")
+        
+
+
+    def attaquer(self, cible):
+        """Effectuer une attaque en prenant en compte la défense de la cible."""
+        degats = max(0, self.attack_power - cible.defense)
+        cible.recevoir_degats(degats)
+
+    def recevoir_degats(self, degats):
+        """Réduire les points de vie en fonction des dégâts subis."""
+        self.health -= degats
+        if self.health < 0:
+            self.health = 0
+
+    def utiliser_competence(self, index, cible):
+        """Utiliser une compétence sur une cible."""
+        if 0 <= index < len(self.competences):
+            self.competences[index].appliquer(cible)
+
+    def draw(self, surface):
+        # """Dessiner l'unité avec une image si disponible."""
+        if self.image:
+            surface.blit(self.image, (self.x * CELL_SIZE, self.y * CELL_SIZE))
+        else:  # Dessiner un cercle si aucune image n'est disponible
+            color = BLUE if self.team == 'player' else RED
+            pygame.draw.circle(surface, color, (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE // 2), CELL_SIZE // 3)
+
+    def __str__(self):
+        competences_str = [competence.nom for competence in self.competences]
+        return (f"Unité({self.nom}, {self.x}, {self.y}, Vie: {self.health}, Attaque: {self.attack_power}, "
+                f"Défense: {self.defense}, Vitesse: {self.vitesse}, "
+                f"Compétences: {competences_str})")
+
+
+# Exemple de compétence et effet
+class Competence:
+    def __init__(self, nom, description, effet):
+        self.nom = nom
+        self.description = description
+        self.effet = effet
+
+    def appliquer(self, cible):
+        """Appliquer un effet à une cible."""
+        self.effet(cible)
+
+
+def soin_effet(cible):
+    cible.health += 20
+    if cible.health > 100:  # Supposons que 100 est le maximum
+        cible.health = 100
+
+
+def attaque_puissante_effet(cible):
+    degats = 50
+    cible.recevoir_degats(degats)
+
+
+
