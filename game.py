@@ -7,6 +7,9 @@ WIDTH = 15 * 50  # Largeur de la fenêtre (15 cases de 50 pixels)
 HEIGHT = 15 * 50  # Hauteur de la fenêtre (15 cases de 50 pixels)
 CELL_SIZE = 50  # Taille de chaque case (50x50 pixels)
 CREAM = (245, 245, 220)  # Couleur crème pour l'arrière-plan
+NUM_COLUMNS = 15 #nombre de colonnes 
+NUM_ROWS = 15 #nombre de ligne
+
 
 class Game:
     def __init__(self, screen):
@@ -18,22 +21,22 @@ class Game:
 
         # Initialisation des unités des joueurs
         self.player_units = [
-            Type_Unite("Alex", 0, 0, 100, 30, "player", 10, 3, [competence_soin], "./A.jpg"),
-            Type_Unite("Clara", 0, 1, 100, 25, "player", 15, 4, [competence_attaque_puissante], "./B.jpg"),
-            Type_Unite("Maxime", 0, 2, 100, 35, "player", 10, 3, [competence_attaque_puissante], "./C.jpg"),
-            Type_Unite("Sophie", 0, 3, 100, 20, "player", 20, 2, [competence_soin], "./D.jpg"),
+            Type_Unite("Alex", 0, 0, 100, 30, "player", 10, 3, [competence_soin], 0),
+            Type_Unite("Clara", 0, 1, 100, 25, "player", 15, 4, [competence_attaque_puissante], 1),
+            Type_Unite("Maxime", 0, 2, 100, 35, "player", 10, 3, [competence_attaque_puissante], 2),
+            Type_Unite("Sophie", 0, 3, 100, 20, "player", 20, 2, [competence_soin], 3),
         ]
 
         # Initialisation des unités ennemies
         self.enemy_units = [
-            Type_Unite("Alex", 14, 14, 100, 30, "enemy", 10, 3, [competence_soin], "./A.jpg"),
-            Type_Unite("Clara", 14, 12, 100, 25, "enemy", 15, 4, [competence_attaque_puissante], "./B.jpg"),
-            Type_Unite("Maxime", 14, 13, 100, 35, "enemy", 10, 3, [competence_attaque_puissante], "./C.jpg"),
-            Type_Unite("Sophie", 14, 11, 100, 20, "enemy", 20, 2, [competence_soin], "./D.jpg"),
+            Type_Unite("Alex", 14, 14, 100, 30, "enemy", 10, 3, [competence_soin], 0),
+            Type_Unite("Clara", 14, 12, 100, 25, "enemy", 15, 4, [competence_attaque_puissante], 1),
+            Type_Unite("Maxime", 14, 13, 100, 35, "enemy", 10, 3, [competence_attaque_puissante],2),
+            Type_Unite("Sophie", 14, 11, 100, 20, "enemy", 20, 2, [competence_soin], 3),
         ]
 
         # Initialisation du terrain
-        self.terain = Terrain(15, 15)
+        self.terain = Terrain(NUM_COLUMNS, NUM_ROWS)
         self.terain.generer_grille()
 
     def handle_player_turn(self):
@@ -88,7 +91,15 @@ class Game:
 
     def flip_display(self):
         """Affiche l'état actuel du jeu."""
-        self.screen.fill(CREAM)
+        
+        #Affichage de la photo en arriere plan 
+        window_width = CELL_SIZE * NUM_COLUMNS
+        window_height = CELL_SIZE * NUM_ROWS
+        background = pygame.image.load("Desert2.jpg.")
+        background = pygame.transform.scale(background, (window_width, window_height))
+        self.screen.blit(background, (0, 0))
+
+        #Affichage de la grille 
         self.terain.afficher_grille(self.screen)
 
         for unit in self.player_units + self.enemy_units:
@@ -100,6 +111,7 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Mon jeu de stratégie")
+ 
     game = Game(screen)
 
     while True:

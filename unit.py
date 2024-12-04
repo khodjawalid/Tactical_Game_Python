@@ -14,9 +14,9 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
+Select_color = (75,0,130)  #Couleur à afficher derriere le joueur selectionné à choisir lus tard 
 
 
-image_path = r"C:\Users\cheml\Desktop\POO 2\POO\image"
 class Unit:
     """
     Classe pour représenter une unité.
@@ -101,43 +101,32 @@ class Unit:
 
 
 
-       
-
     def attack(self, target):
         """Attaque une unité cible."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
             target.health -= self.attack_power
 
-    def draw(self, surface):
-            # """Dessiner l'unité avec une image si disponible, sinon dessiner un cercle."""
-        if self.image:  # Si l'image est disponible
-            surface.blit(self.image, (self.x * CELL_SIZE, self.y * CELL_SIZE))
-        else:  # Sinon, dessiner un cercle
-            color = BLUE if self.team == 'player' else RED
-            pygame.draw.circle(surface, color, (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
-
-
-
 
 
 class Type_Unite(Unit):  # Héritage de la classe Unit
-    def __init__(self, nom, x, y, health, attack_power, team, defense, vitesse, competences=None, image_path=None):
+    def __init__(self, nom, x, y, health, attack_power, team, defense, vitesse, competences=None, image_id=None):
+        #On doit nommer les images de la facon suivante p{i}
         super().__init__(x, y, health, attack_power, team)
         self.nom = nom
         self.defense = defense
         self.vitesse = vitesse
         self.competences = competences if competences else []
+        self.id=image_id
 
-        # Chargement de l'image (fichiers dans le même répertoire)
-        if image_path:
-            try:
-                self.image = pygame.image.load(image_path)
-                self.image = pygame.transform.scale(self.image, (CELL_SIZE, CELL_SIZE))
-            except pygame.error as e:
-                print(f"Erreur lors du chargement de l'image {image_path}: {e}")
-                self.image = None
-        else:
-            print(f"Aucun chemin d'image fourni pour {nom}.")
+        #Téléchargement de l'image qui représente le joueur selonn son Id
+        self.image = pygame.image.load(f'p{image_id}.jpg')
+
+        #Redimenssionner l'image pour qu'elle soit un petit peu plus petite que la taille de la cellule  
+        scale_factor = 0.9  #Si tu le changes, n'oublies pas de le changer en bas à l'affichage !!!
+        new_size = (int(CELL_SIZE * scale_factor), int(CELL_SIZE * scale_factor))
+        self.image = pygame.transform.scale(self.image, new_size)
+
+            
         
 
 
@@ -157,13 +146,18 @@ class Type_Unite(Unit):  # Héritage de la classe Unit
         if 0 <= index < len(self.competences):
             self.competences[index].appliquer(cible)
 
-    def draw(self, surface):
-        # """Dessiner l'unité avec une image si disponible."""
-        if self.image:
-            surface.blit(self.image, (self.x * CELL_SIZE, self.y * CELL_SIZE))
-        else:  # Dessiner un cercle si aucune image n'est disponible
-            color = BLUE if self.team == 'player' else RED
-            pygame.draw.circle(surface, color, (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE // 2), CELL_SIZE // 3)
+    def draw(self, screen):
+        if self.is_selected:
+            pygame.draw.rect(screen, Select_color, (self.x * CELL_SIZE,
+                             self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        
+        #Affichage du personnage au milieu de la cellule
+        scale_factor = 0.9
+        offset = int(CELL_SIZE * (1 - scale_factor) / 2)
+        # Ajustement pour centrer l'image
+        position = (self.x * CELL_SIZE + offset, self.y * CELL_SIZE + offset)
+        screen.blit(self.image, position)
+        
 
     def __str__(self):
         competences_str = [competence.nom for competence in self.competences]
