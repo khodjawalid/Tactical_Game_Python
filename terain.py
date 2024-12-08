@@ -59,10 +59,10 @@ class Terrain:
             ligne = []
             for y in range(self.hauteur):
 
-                if (x in range(5, 10) and y in range(3, 6)) or (x in range(7, 9) and y in range(9, 12)):
-                    case_type = 1  # Obstacle
-                else :  # Ajouter un peu de hasard
-                    case_type = 0  # Obstacle ponctuel
+                # if (x in range(5, 10) and y in range(3, 6)) or (x in range(7, 9) and y in range(9, 12)):
+                #     case_type = 1  # Obstacle
+                # else :  # Ajouter un peu de hasard
+                case_type = 0  # Obstacle ponctuel
 
                     # Créer une nouvelle case avec le type sélectionné
                 nouvelle_case = Case(case_type, x, y)

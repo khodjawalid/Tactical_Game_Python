@@ -3,6 +3,7 @@ import pygame
 import random
 from game import *
 from main import *
+from Feu import *
 
 # Constantes
 GRID_SIZE = 8
@@ -19,116 +20,54 @@ Select_color = (75,0,130)  #Couleur à afficher derriere le joueur selectionné 
 
 
 class Unit:
-    """
-    Classe pour représenter une unité.
-
-    ...
-    Attributs
-    ---------
-    x : int
-        La position x de l'unité sur la grille.
-    y : int
-        La position y de l'unité sur la grille.
-    health : int
-        La santé de l'unité.
-    attack_power : int
-        La puissance d'attaque de l'unité.
-    team : str
-        L'équipe de l'unité ('player' ou 'enemy').
-    is_selected : bool
-        Si l'unité est sélectionnée ou non.
-
-    Méthodes
-    --------
-    move(dx, dy)
-        Déplace l'unité de dx, dy.
-    attack(target)
-        Attaque une unité cible.
-    draw(screen)
-        Dessine l'unité sur la grille.
-    """
-
-    def __init__(self, x, y, health, attack_power, team):
-        """
-        Construit une unité avec une position, une santé, une puissance d'attaque et une équipe.
-
-        Paramètres
-        ----------
-        x : int
-            La position x de l'unité sur la grille.
-        y : int
-            La position y de l'unité sur la grille.
-        health : int
-            La santé de l'unité.
-        attack_power : int
-            La puissance d'attaque de l'unité.
-        team : str
-            L'équipe de l'unité ('player' ou 'enemy').
-        """
-        self.x = x
-        self.y = y
-        self.health = health
-        self.attack_power = attack_power
-        self.team = team  # 'player' ou 'enemy'
-        self.is_selected = False
-
-    def move(self, dx, dy, terrain):
-        """Déplace l'unité de dx, dy en fonction des indices de la grille (1 case par direction)."""
-        new_x = self.x + dx
-        new_y = self.y + dy
-    
-    # Vérifier si les indices sont valides et dans les limites de la grille
-        if 0 <= new_x < len(terrain.cases) and 0 <= new_y < len(terrain.cases[0]):
-            target_case = terrain.cases[new_x][new_y]  # Récupère la case cible
-        
-        # Si l'unité rencontre un obstacle, elle ne peut pas avancer
-            if target_case.type_case == 'obstacle':
-                return False
-        
-        # Si l'unité passe sur de l'eau ou du feu, elle meurt
-            if target_case.type_case == 'eau' or target_case.type_case == 'feu':
-                self.health = 0 
-                pygame.quit()
-                exit() # L'unité meurt
-                
-        
-        # Si aucune condition n'est remplie, l'unité peut se déplacer
-            self.x = new_x
-            self.y = new_y
-            return True
-    
-    # Si les indices sont hors limites, l'unité ne peut pas se déplacer
-        return False
-
-
-
-    def attack(self, target):
-        """Attaque une unité cible."""
-        if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            target.health -= self.attack_power
-
-
-
-
-class Type_Unite:
-    def __init__(self, nom, x, y, vie, attaque, equipe, defense, deplacement_distance, competences, image_id = None):
-        self.nom = nom
+    def __init__(self, x, y, vie, attack_power, equipe, arme=None, game = None ):
         self.x = x
         self.y = y
         self.vie = vie
-        self.attaque = attaque
-        self.equipe = equipe
+        self.attack_power = attack_power
+        self.equipe = equipe  # 'player' ou 'enemy'
+        self.is_selected = False
+        self.arme = arme 
+        self .game = game  # Arme associée à l'unité (par défaut aucune)
+
+    def attack(self, target, terrain=None):
+        """Attaque une unité cible avec ou sans arme."""
+        if self.arme:
+            print(f"{self.equipe} utilise {self.arme.nom} contre {target.equipe}!")
+            self.arme.utiliser(self, target, terrain)  # Utilisation de l'arme
+        else:
+            # Attaque par défaut (sans arme)
+            if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
+                target.recevoir_degats(self.attack_power)
+
+    def recevoir_degats(self, degats):
+        """Réduit les points de vie de l'unité en fonction des dégâts."""
+        self.vie -= degats
+        if self.vie < 0:
+            self.vie = 0
+        print(f"L'unité {self.equipe} reçoit {degats} dégâts. Vie restante : {self.vie}.")
+
+
+
+
+class Type_Unite(Unit):
+    def __init__(self, nom, x, y, vie, attaque, equipe, defense, deplacement_distance, competences, arme=None, image_id=None):
+        super().__init__(x, y, vie, attaque, equipe, arme)
+        self.nom = nom
         self.defense = defense
-        self.deplacement_distance = deplacement_distance   # La distance que l'unité peut parcourir en une fois
+        self.deplacement_distance = deplacement_distance
         self.competences = competences
         self.image = pygame.image.load(f'image/p{image_id}.jpg')
 
-        #Redimenssionner l'image pour qu'elle soit un petit peu plus petite que la taille de la cellule  
-        scale_factor = 0.9  #Si tu le changes, n'oublies pas de le changer en bas à l'affichage !!!
+        # Redimensionner l'image
+        scale_factor = 0.9
         new_size = (int(CELL_SIZE * scale_factor), int(CELL_SIZE * scale_factor))
         self.image = pygame.transform.scale(self.image, new_size)
 
-        self.is_selected = False
+    def attaquer_avec_arme(self, cible, terrain=None):
+        """Attaque une cible en utilisant l'arme équipée."""
+        super().attack(cible, terrain)  # Appel de la méthode `attack` de `Unit`
+
 
     def move(self, dx, dy, terrain):
         """Déplace l'unité d'une case en fonction de sa capacité de déplacement."""
@@ -156,38 +95,25 @@ class Type_Unite:
             return True
         else:
             return False  # Si la case cible est en dehors des limites
+    
+
         
+
     def update_health(self, surface):
-        """Met à jour la barre de santé de l'unité."""
-        # Couleur de la barre de santé
-        bar_color = (111, 210, 46)
-        # Couleur de fond (barre vide)
-        background_color = (255, 0, 0)
+        bar_width = 40
+        bar_height = 4
+        bar_position = (self.x * CELL_SIZE, self.y * CELL_SIZE , bar_width, bar_height)
+        health_width = bar_width * (self.vie / 100)
 
-        # Dimensions de la barre (position basée sur la position de l'unité)
-        bar_width = 50  # Largeur fixe de la barre
-        bar_height = 5  # Hauteur fixe de la barre
-        bar_position = (self.x * CELL_SIZE, self.y * CELL_SIZE - 10, bar_width, bar_height)
-        health_width = bar_width * (self.vie / 100)  # Proportion de santé restante
+        if self.equipe == "player":
+            bar_color = (0, 255, 0)  # Vert pour le joueur
+        else:
+            bar_color = (255, 0, 0)  # Rouge pour l'ennemi
 
-        # Dessiner la barre de fond (rouge)
-        pygame.draw.rect(surface, background_color, bar_position)
-
-        # Dessiner la barre de santé (vert)
+        pygame.draw.rect(surface, (128, 128, 128), bar_position)  # Fond gris
         pygame.draw.rect(surface, bar_color, (bar_position[0], bar_position[1], health_width, bar_height))
 
 
-
-    def attaquer(self, cible):
-        """Effectuer une attaque en prenant en compte la défense de la cible."""
-        degats = max(0, self.attack_power - cible.defense)
-        cible.recevoir_degats(degats)
-
-    def recevoir_degats(self, degats):
-        """Réduire les points de vie en fonction des dégâts subis."""
-        self.health -= degats
-        if self.health < 0:
-            self.health = 0
 
     def utiliser_competence(self, index, cible):
         """Utiliser une compétence sur une cible."""
@@ -209,8 +135,8 @@ class Type_Unite:
 
     def __str__(self):
         competences_str = [competence.nom for competence in self.competences]
-        return (f"Unité({self.nom}, {self.x}, {self.y}, Vie: {self.health}, Attaque: {self.attack_power}, "
-                f"Défense: {self.defense}, Vitesse: {self.vitesse}, "
+        return (f"Unité({self.nom}, {self.x}, {self.y}, Vie: {self.vie}, Attaque: {self.attaque}, "
+                f"Défense: {self.defense}, Vitesse: {self.deplacement_distance}, "
                 f"Compétences: {competences_str})")
 
 
@@ -227,9 +153,9 @@ class Competence:
 
 
 def soin_effet(cible):
-    cible.health += 20
-    if cible.health > 100:  # Supposons que 100 est le maximum
-        cible.health = 100
+    cible.vie += 20
+    if cible.vie > 100:  # Supposons que 100 est le maximum
+        cible.vie = 100
 
 
 def attaque_puissante_effet(cible):
@@ -247,8 +173,8 @@ def feu_effet(caster, target, terrain):
 
     for u in caster.game.player_units + caster.game.enemy_units:
         if (u.x, u.y) in zone:  # Vérifie si une unité est dans la zone
-            u.health -= damage
-            if u.health <= 0:
+            u.vie -= damage
+            if u.vie <= 0:
                 u.is_alive = False  # Gère la mort de l'unité
 
 
