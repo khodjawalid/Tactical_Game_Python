@@ -3,16 +3,17 @@ import random
 import numpy as np
 from unit import *
 from game import *
+from main import *
 
 # Charger les images (icônes)
-icon_feu = pygame.image.load("Herbe.png")
-icon_eau = pygame.image.load("eau.png")
-icon_obstacle = pygame.image.load("obstacle.jpg")
+icon_feu = pygame.image.load("image/Herbe.jpg")
+icon_eau = pygame.image.load("image/eau.png")
+icon_obstacle = pygame.image.load("image/obstacle.jpg")
 
-
-icon_feu = pygame.transform.scale(icon_feu, (50, 50))
-icon_eau = pygame.transform.scale(icon_eau, (50, 50))
-icon_obstacle = pygame.transform.scale(icon_obstacle, (50, 50))
+CELL_SIZE = 40
+icon_feu = pygame.transform.scale(icon_feu, (CELL_SIZE, CELL_SIZE))
+icon_eau = pygame.transform.scale(icon_eau, (CELL_SIZE, CELL_SIZE))
+icon_obstacle = pygame.transform.scale(icon_obstacle, (CELL_SIZE, CELL_SIZE))
 
 class Case:
     def __init__(self, type_case, x, y, effet=None):
@@ -23,7 +24,7 @@ class Case:
 
     def afficher(self, screen):
         """Calculer la position sur la grille et afficher l'icône associée."""
-        position = (self.x * 50, self.y * 50)
+        position = (self.x * CELL_SIZE, self.y * CELL_SIZE)
 
         if self.type_case == 1:
             screen.blit(icon_obstacle, position)

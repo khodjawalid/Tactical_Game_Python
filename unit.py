@@ -2,10 +2,11 @@ import os
 import pygame
 import random
 from game import *
+from main import *
 
 # Constantes
 GRID_SIZE = 8
-CELL_SIZE = 50
+CELL_SIZE = 40
 WIDTH = GRID_SIZE * CELL_SIZE
 HEIGHT = GRID_SIZE * CELL_SIZE
 FPS = 30
@@ -108,26 +109,73 @@ class Unit:
 
 
 
-class Type_Unite(Unit):  # Héritage de la classe Unit
-    def __init__(self, nom, x, y, health, attack_power, team, defense, vitesse, competences=None, image_id=None):
-        #On doit nommer les images de la facon suivante p{i}
-        super().__init__(x, y, health, attack_power, team)
-        self.nom = nom
-        self.defense = defense
-        self.vitesse = vitesse
-        self.competences = competences if competences else []
-        self.id=image_id
 
-        #Téléchargement de l'image qui représente le joueur selonn son Id
-        self.image = pygame.image.load(f'p{image_id}.jpg')
+class Type_Unite:
+    def __init__(self, nom, x, y, vie, attaque, equipe, defense, deplacement_distance, competences, image_id = None):
+        self.nom = nom
+        self.x = x
+        self.y = y
+        self.vie = vie
+        self.attaque = attaque
+        self.equipe = equipe
+        self.defense = defense
+        self.deplacement_distance = deplacement_distance   # La distance que l'unité peut parcourir en une fois
+        self.competences = competences
+        self.image = pygame.image.load(f'image/p{image_id}.jpg')
 
         #Redimenssionner l'image pour qu'elle soit un petit peu plus petite que la taille de la cellule  
         scale_factor = 0.9  #Si tu le changes, n'oublies pas de le changer en bas à l'affichage !!!
         new_size = (int(CELL_SIZE * scale_factor), int(CELL_SIZE * scale_factor))
         self.image = pygame.transform.scale(self.image, new_size)
 
-            
+        self.is_selected = False
+
+    def move(self, dx, dy, terrain):
+        """Déplace l'unité d'une case en fonction de sa capacité de déplacement."""
+        # Calculer la nouvelle position
+        new_x = self.x + dx
+        new_y = self.y + dy
         
+        # Vérifier si la position est valide
+        if 0 <= new_x < len(terrain.cases) and 0 <= new_y < len(terrain.cases[0]):
+            target_case = terrain.cases[new_x][new_y]
+
+            # Si la case est un obstacle, l'unité ne peut pas avancer
+            if target_case.type_case == 'obstacle':
+                return False
+
+            # Si l'unité passe sur de l'eau ou du feu, elle meurt
+            if target_case.type_case == 'eau' or target_case.type_case == 'feu':
+                self.vie = 0
+                pygame.quit()
+                exit()  # L'unité meurt
+
+            # Si tout est valide, on déplace l'unité d'une case
+            self.x = new_x
+            self.y = new_y
+            return True
+        else:
+            return False  # Si la case cible est en dehors des limites
+        
+    def update_health(self, surface):
+        """Met à jour la barre de santé de l'unité."""
+        # Couleur de la barre de santé
+        bar_color = (111, 210, 46)
+        # Couleur de fond (barre vide)
+        background_color = (255, 0, 0)
+
+        # Dimensions de la barre (position basée sur la position de l'unité)
+        bar_width = 50  # Largeur fixe de la barre
+        bar_height = 5  # Hauteur fixe de la barre
+        bar_position = (self.x * CELL_SIZE, self.y * CELL_SIZE - 10, bar_width, bar_height)
+        health_width = bar_width * (self.vie / 100)  # Proportion de santé restante
+
+        # Dessiner la barre de fond (rouge)
+        pygame.draw.rect(surface, background_color, bar_position)
+
+        # Dessiner la barre de santé (vert)
+        pygame.draw.rect(surface, bar_color, (bar_position[0], bar_position[1], health_width, bar_height))
+
 
 
     def attaquer(self, cible):
@@ -166,7 +214,7 @@ class Type_Unite(Unit):  # Héritage de la classe Unit
                 f"Compétences: {competences_str})")
 
 
-# Exemple de compétence et effet
+
 class Competence:
     def __init__(self, nom, description, effet):
         self.nom = nom
@@ -187,6 +235,22 @@ def soin_effet(cible):
 def attaque_puissante_effet(cible):
     degats = 50
     cible.recevoir_degats(degats)
+
+def feu_effet(caster, target, terrain):
+    """Inflige des dégâts de zone autour de la cible."""
+    damage = 30  # Dégâts de base
+    x, y = target.x, target.y  # Position de la cible
+    zone = [
+        (x-1, y), (x+1, y), (x, y-1), (x, y+1),  # Cases adjacentes
+        (x-1, y-1), (x-1, y+1), (x+1, y-1), (x+1, y+1)  # Diagonales
+    ]
+
+    for u in caster.game.player_units + caster.game.enemy_units:
+        if (u.x, u.y) in zone:  # Vérifie si une unité est dans la zone
+            u.health -= damage
+            if u.health <= 0:
+                u.is_alive = False  # Gère la mort de l'unité
+
 
 
 
