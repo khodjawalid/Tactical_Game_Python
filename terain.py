@@ -6,13 +6,11 @@ from game import *
 from main import *
 
 # Charger les images (icônes)
-icon_feu = pygame.image.load("image/Herbe.jpg")
-icon_eau = pygame.image.load("image/eau.png")
+
 icon_obstacle = pygame.image.load("image/obstacle.jpg")
 
 CELL_SIZE = 40
-icon_feu = pygame.transform.scale(icon_feu, (CELL_SIZE, CELL_SIZE))
-icon_eau = pygame.transform.scale(icon_eau, (CELL_SIZE, CELL_SIZE))
+
 icon_obstacle = pygame.transform.scale(icon_obstacle, (CELL_SIZE, CELL_SIZE))
 
 class Case:
@@ -31,35 +29,47 @@ class Case:
         else :
             pass
 
+
 class Terrain:
     def __init__(self, largeur, hauteur):
         self.largeur = largeur  # Largeur de la grille
         self.hauteur = hauteur  # Hauteur de la grille
         self.cases = []  # Initialisation de la liste des cases
 
-    def generer(self):
-        """Génère la grille avec des cases de types aléatoires."""
-        
-        for x in range(self.largeur):
-            ligne = []
-            for y in range(self.hauteur):
-                case_type = random.choices(['traversable', 'obstacle', 'eau', 'feu'], weights=[0.7,0.1,0.1,0.1], k=1)[0]
-
-                # Créer une nouvelle case avec le type sélectionné
-                nouvelle_case = Case(case_type, x, y)
-                ligne.append(nouvelle_case)  # Ajout de la case à la ligne
-
-            self.cases.append(ligne)  # Ajout de la ligne au terrain
-
     def generer_grille(self):
 
         grille = np.zeros((self.hauteur,self.largeur))
-        
-        for x in range(self.largeur):
-            ligne = []
-            for y in range(self.hauteur):
+        liste_obstacles = [
+        # Structure coté gauche 
+        [5,2], [6,2], [7,2], [8,2], [8,3], 
+        [3,4], [3,5], [4,5], [5,5], [6,5],  
+        [3,8], [3,9], [3,10], [3,11], 
+        [3,14], [3,15], [4,15], [5,15], [6,15], [7,15],  
+        #Z descedant
+        [6,8], [7,8], [7,9], [8,9], [8,10], [9,10], [9,11],[10,11], [10,12], [11,12], [11,13], [12,13], [12,14], [13,14], [13,15],  
+        #Ligne horizontale basse 
+        [17,14], [18,14], [19,14], [20,14], [21,14], [22,14], [23,14], [24,14], [25,14],[16,14],  
+        #Structure coté droit 
+        [30, 15], [31, 15], [32, 15], [33, 15], [33, 14],  
+        [31,12], [30,12], [29,12], [28,12], [28,13],  
+        [33, 9], [33, 8], [33, 7], [33, 6], [33, 6],  
+        [33, 3], [33, 2], [32, 2], [31, 2], [30, 2], [29, 2],
+        #Milieu en haut 
+        [13, 2], [14, 2], [15, 2], [16, 2], [17, 2], [18, 2], [12, 2] ,
+        [22, 2], [23, 2], [24, 2], [25, 2], [26, 2], [25, 3],[25,4],[25,5], 
+        #Milieu
+        [12, 6], [12, 7], [12, 8], [12, 9], [12, 5],  
+        [25, 11], [25, 10], [25, 9], [25, 8], [24,11],[23,11],[22,11],[21,11],
+        [17, 11], [16, 11], [15, 11], [18,11], 
+        #centre 
+        [19,6], [18,6], [19,7], [18,7],
+        ]
 
-                if (x in range(5, 10) and y in range(3, 6)) or (x in range(7, 9) and y in range(9, 12)):
+        for x in range(self.hauteur):
+            ligne = []
+            for y in range(self.largeur):
+
+                if [x,y] in liste_obstacles :
                     case_type = 1  # Obstacle
                 else :  # Ajouter un peu de hasard
                     case_type = 0  # Obstacle ponctuel
@@ -68,8 +78,6 @@ class Terrain:
                 nouvelle_case = Case(case_type, x, y)
                 ligne.append(nouvelle_case)  # Ajout de la case à la ligne
             self.cases.append(ligne)
-
-
 
 
     def afficher_grille(self, screen):
