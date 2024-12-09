@@ -40,8 +40,8 @@ def lance_effet(utilisateur, cible, terrain=None):
     if dy != 0: dy = dy // abs(dy)
     cible.move(dx, dy, terrain)
 
-def bombe_effet(utilisateur, cible, terrain=None):
-    """Effet de la bombe : inflige des dégâts de zone."""
+def bombe_effet(utilisateur, cible, terrain=None, toutes_unites=None):
+    """Effet simplifié de la bombe : inflige des dégâts de zone."""
     print(f"{utilisateur.nom} utilise une BOMBE sur {cible.nom}!")
 
     # Définir la zone d'effet autour de la cible
@@ -50,8 +50,14 @@ def bombe_effet(utilisateur, cible, terrain=None):
         (cible.x, cible.y-1), (cible.x, cible.y+1),
         (cible.x, cible.y)  # Inclure la case de la cible elle-même
     ]
+
+    # Si la liste de toutes les unités n'est pas fournie, on ne fait rien
+    if toutes_unites is None:
+        print("Erreur : Liste des unités non spécifiée.")
+        return
+
     # Applique les dégâts à toutes les unités dans la zone
-    for u in utilisateur.game.player_units + utilisateur.game.enemy_units:
+    for u in toutes_unites:
         if (u.x, u.y) in zone:
             print(f"{u.nom} est dans la zone d'effet de la bombe !")
             u.recevoir_degats(40)

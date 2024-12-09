@@ -1,18 +1,26 @@
 import pygame
-from terain import * 
+from terain import * # Vérifiez que 'terain' est bien importé, cela semble être une faute de frappe pour 'terrain'
 from unit import *
 from main import *
 from Feu import *
 
+#Bibliothèque pour lire et afficher un gif derrière le menu démarrage 
+from PIL import Image, ImageSequence
+
 # Constantes globales
-WIDTH = 15 * 40  # Largeur de la fenêtre (15 cases de 50 pixels)
-HEIGHT = 15 * 40  # Hauteur de la fenêtre (15 cases de 50 pixels)
-TABLEAU_HEIGHT = 100  # Hauteur du tableau d'affichage en bas
-CELL_SIZE = 40  # Taille de chaque case (50x50 pixels)
+
+WIDTH = 37* 40  # Largeur de la fenêtre (15 cases de 40 pixels)
+HEIGHT = 18 * 40  # Hauteur de la fenêtre (15 cases de 40 pixels)
+
+TABLEAU_HEIGHT = 40  # Hauteur du tableau d'affichage en bas
+CELL_SIZE = 40  # Taille de chaque case (40x40 pixels)
+
+CREAM = (245, 245, 220)  # Couleur crème pour l'arrière-plan
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-NUM_COLUMNS = 15 
-NUM_ROWS = 15
+
+NUM_COLUMNS = 37
+NUM_ROWS = 18
 
 # Taille des images des unités
 UNIT_IMAGE_SIZE = (40, 40)  # Taille redimensionnée des images (40x40 pixels)
@@ -37,17 +45,17 @@ class Game:
 
         # Initialisation des unités des joueurs
         self.player_units = [
-            Type_Unite("Alex", 0, 0, 100, 30, "player", 10, 1, [competence_soin],epee ,"0"),
+            Type_Unite("Alex", 0, 0,  100, 30, "player", 10, 1, [competence_soin],epee ,"0"),
             Type_Unite("Clara", 0, 1, 100, 25, "player", 15, 2, [competence_attaque_puissante],arc,"1"),
             Type_Unite("Maxime", 0, 2, 100, 35, "player", 10, 3, [competence_attaque_puissante],lance ,"2"),
             Type_Unite("Sophie", 0, 3, 100, 20, "player", 20, 4, [competence_soin], bombe ,"3"),
         ]
 
         self.enemy_units = [
-            Type_Unite("Alex", 14, 14, 100, 30, "enemy", 10, 1, [competence_soin], epee ,"0"),
-            Type_Unite("Clara", 14, 13, 100, 25, "enemy", 15, 2, [competence_attaque_puissante], arc , "1"),
-            Type_Unite("Maxime", 14, 12, 100, 35, "enemy", 10, 3, [competence_attaque_puissante],lance , "2"),
-            Type_Unite("Sophie", 14, 11, 100, 20, "enemy", 20, 4, [competence_soin], bombe, "3"),
+            Type_Unite("Alex", 28, 10, 100, 30, "enemy", 10, 1, [competence_soin], epee ,"0"),
+            Type_Unite("Clara", 28, 9, 100, 25, "enemy", 15, 2, [competence_attaque_puissante], arc , "1"),
+            Type_Unite("Maxime", 28, 12, 100, 35, "enemy", 10, 3, [competence_attaque_puissante],lance , "2"),
+            Type_Unite("Sophie", 28, 11, 100, 20, "enemy", 20, 4, [competence_soin], bombe, "3"),
         ]
 
         for unit in self.player_units + self.enemy_units:
@@ -55,7 +63,7 @@ class Game:
                 unit.image = pygame.transform.scale(unit.image, UNIT_IMAGE_SIZE)
 
         # Initialisation du terrain
-        self.terrain = Terrain(15, 15)  # Correction de 'terain' en 'terrain'
+        self.terrain = Terrain(NUM_COLUMNS, NUM_ROWS)  # Correction de 'terain' en 'terrain'
         self.terrain.generer_grille()
     
 
@@ -254,55 +262,58 @@ class Game:
 
         return nearest_player
 
+
+
+
+
     def flip_display(self):
         """Affiche l'état actuel du jeu."""
         # Afficher le fond d'écran
-        window_width = CELL_SIZE * NUM_COLUMNS
-        window_height = CELL_SIZE * NUM_ROWS
+        window_width = WIDTH
+        window_height = HEIGHT
         background = pygame.image.load("image/Desert2.jpg")
-        background = pygame.transform.scale(background, (window_width, window_height))
+        background = pygame.transform.scale(background, (WIDTH , HEIGHT - TABLEAU_HEIGHT))
         self.screen.blit(background, (0, 0))
+
 
         # Affiche la grille
         self.terrain.afficher_grille(self.screen)
 
         # Affiche toutes les unités et leurs barres de santé
         for unit in self.player_units + self.enemy_units:
-            unit.draw(self.screen)  # Dessine l'unité
-            unit.update_health(self.screen)  # Dessine la barre de santé
+            if 0 <= unit.x < NUM_COLUMNS and 0 <= unit.y < NUM_ROWS:
+               unit.draw(self.screen)
+               unit.update_health(self.screen)
 
         # Dessiner le tableau d'affichage
         self.afficher_tableau()
 
         pygame.display.flip()
 
+ 
 
     def afficher_tableau(self):
+        #Affichage au milieu de la fenetre 
         """Affiche le tableau d'affichage des scores en bas."""
         font = pygame.font.Font(None, 36)
-        tableau_rect = pygame.Rect(0, HEIGHT - TABLEAU_HEIGHT + 120, WIDTH, TABLEAU_HEIGHT)
-        pygame.draw.rect(self.screen, WHITE, tableau_rect)
+        tableau_rect = pygame.Rect(0, HEIGHT - TABLEAU_HEIGHT, WIDTH, TABLEAU_HEIGHT)
+        SAND_COLOR = (194, 178, 128)
 
-        # Vérifier que les variables de score et de tour sont bien initialisées
-        if hasattr(self, 'player_score') and hasattr(self, 'enemy_score') and hasattr(self, 'tour'):
-            score_text = font.render(
-                f"Tour: {self.tour} | Player: {self.player_score} - {self.enemy_score} :Enemy", True, BLACK
-            )
-            self.screen.blit(score_text, (100, HEIGHT - TABLEAU_HEIGHT + 150))
+        pygame.draw.rect(self.screen, SAND_COLOR, tableau_rect)
 
-        # Vérifier que start_time est défini avant de calculer le temps
-        if hasattr(self, 'start_time'):
-            elapsed_time = (pygame.time.get_ticks() - self.start_time) // 1000  # Temps écoulé en secondes
-            time_text = font.render(f"Temps écoulé: {elapsed_time}s", True, BLACK)
+        # Texte des scores et tours
+        score_text = font.render(
+            f"Tour: {self.tour} | Player: {self.player_score} - {self.enemy_score} :Enemy", True, BLACK
+        )
 
-            # Affichage du temps au centre
-            time_x = WIDTH // 2 - time_text.get_width() // 2  # Centrer horizontalement
-            time_y = HEIGHT - TABLEAU_HEIGHT + 120  # Position verticale alignée
-            self.screen.blit(time_text, (time_x, time_y))
+        # Calcul de la position centrée
+        text_width = score_text.get_width()
+        text_height = score_text.get_height()
+        text_x = (WIDTH - text_width) // 2
+        text_y = HEIGHT - TABLEAU_HEIGHT + (TABLEAU_HEIGHT - text_height) // 2 
 
-        # Mise à jour de l'écran (si nécessaire)
-        pygame.display.flip()
-
+        # Affichage du texte
+        self.screen.blit(score_text, (text_x, text_y))
     
     def get_accessible_cells(self, unit):
         """
@@ -311,8 +322,9 @@ class Game:
         """
         accessible_cells = []
         max_distance = unit.deplacement_distance
-        max_height = (HEIGHT ) // CELL_SIZE  # Nombre de lignes disponibles dans la grille
-        max_width = NUM_COLUMNS  # Nombre de colonnes disponibles dans la grille
+        max_width = 34 *40 
+        max_height = 18*34
+ 
 
         # Directions rectilignes (haut, bas, gauche, droite)
         directions = [
@@ -350,34 +362,49 @@ class Game:
 
 
 
+                    
 def select_player(screen, title, units):
     """Permet de sélectionner un joueur ou un ennemi avec la souris."""
     font = pygame.font.Font(None, 60)
     small_font = pygame.font.Font(None, 36)
 
+    # Charger l'image en arrière-plan
+    background_image_path = "image/menu2.jpg"  # Chemin vers ton image
+    background_image = pygame.image.load(background_image_path)
+    background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))  # Redimensionner à la taille de l'écran
+
+    # Calculer la position pour centrer les boutons
+    total_buttons_width = len(units) * 150 + (len(units) - 1) * 20  # Largeur totale avec l'espacement
+    start_x = (WIDTH - total_buttons_width) // 2
+    y_pos_buttons = HEIGHT // 2
+
     while True:
-        screen.fill(WHITE)
+        # Afficher l'image comme arrière-plan
+        screen.blit(background_image, (0, 0))
 
         # Affiche le titre
-        title_text = font.render(title, True, BLACK)
-        screen.blit(title_text, (WIDTH // 4 - 80, HEIGHT // 6))
+        title_text = font.render(title, True, CREAM)
+        screen.blit(title_text, ((WIDTH - title_text.get_width()) // 2, HEIGHT // 6))
 
-        # Affiche les unités à sélectionner
+        # Afficher les boutons
         buttons = []
         for i, unit in enumerate(units):
-            x_pos = WIDTH // 8 + i * 120
-            y_pos = HEIGHT // 3
-            button = pygame.Rect(x_pos, y_pos, 150, 150)
+            x_pos = start_x + i * 170  # Espacement de 170 entre chaque bouton
+            button = pygame.Rect(x_pos, y_pos_buttons, CELL_SIZE, CELL_SIZE)
             buttons.append((button, unit))
 
-            # Afficher les images et les noms des unités
+            # Dessiner le bouton
+            pygame.draw.rect(screen, CREAM, button)  # Fond noir pour les boutons
             if unit.image:
-                screen.blit(unit.image, (x_pos, y_pos))
-            unit_name = small_font.render(unit.nom, True, BLACK)
-            screen.blit(unit_name, (x_pos - 25, y_pos + 100))
+                screen.blit(unit.image, (x_pos, y_pos_buttons))  # Afficher l'image de l'unité
+            # Afficher le nom de l'unité en dessous
+            unit_name = small_font.render(unit.nom, True, CREAM)
+            screen.blit(unit_name, (x_pos + 25 - unit_name.get_width() // 2, y_pos_buttons + 2*CELL_SIZE))
 
+        # Actualiser l'écran
         pygame.display.flip()
 
+        # Gestion des événements
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -387,8 +414,36 @@ def select_player(screen, title, units):
                 for button, unit in buttons:
                     if button.collidepoint(event.pos):
                         return unit
-                    
+
+
+def play_gif_background(gif_path, screen):
+    """Lit un GIF et l'affiche en arrière-plan."""
+    # Charger le GIF avec Pillow
+    gif = Image.open(gif_path)
+    frames = [frame.copy() for frame in ImageSequence.Iterator(gif)]
+    
+    clock = pygame.time.Clock()
+    frame_index = 0
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
         
+        # Obtenir la frame actuelle
+        frame = frames[frame_index]
+        frame = frame.resize((WIDTH, HEIGHT))  # Redimensionner à la taille de l'écran
+        frame_surface = pygame.image.fromstring(frame.tobytes(), frame.size, frame.mode)
+        
+        # Afficher la frame
+        screen.blit(frame_surface, (0, 0))
+        pygame.display.flip()
+        
+        # Passer à la frame suivante
+        frame_index = (frame_index + 1) % len(frames)
+        clock.tick(10)  # Contrôle la vitesse (10 FPS ici)
+
+                            
 def splash_screen(screen):
     """Affiche un écran de démarrage avec une image de fond et attend une touche."""
    
@@ -419,34 +474,35 @@ def splash_screen(screen):
 
 
 def menu(screen):
-    """Affiche le menu principal et permet de naviguer avec la souris."""
+    """Affiche le menu principal avec des boutons centrés et un GIF en arrière-plan."""
     font = pygame.font.Font(None, 74)
     small_font = pygame.font.Font(None, 36)
 
-    start_button = pygame.Rect(WIDTH // 3, HEIGHT // 4 + 100, 200, 50)
-    settings_button = pygame.Rect(WIDTH // 3, HEIGHT // 4 + 160, 200, 50)
-    exit_button = pygame.Rect(WIDTH // 3, HEIGHT // 4 + 220, 200, 50)
-    
-    splash_screen(screen)
+    # Dimensions des boutons
+    button_width = 200
+    button_height = 50
+    button_spacing = 20  # Espace entre les boutons
+
+    # Calcul des positions pour centrer les boutons verticalement
+    total_height = 3 * button_height + 2 * button_spacing  # Hauteur totale des boutons et des espaces
+    start_button = pygame.Rect((WIDTH - button_width) // 2, (HEIGHT - total_height) // 2, button_width, button_height)
+    settings_button = pygame.Rect(
+        (WIDTH - button_width) // 2, start_button.y + button_height + button_spacing, button_width, button_height
+    )
+    exit_button = pygame.Rect(
+        (WIDTH - button_width) // 2, settings_button.y + button_height + button_spacing, button_width, button_height
+    )
+
+    clock = pygame.time.Clock()
+
+    # Charger le GIF
+    gif_path = "gif.gif"
+    gif = Image.open(gif_path)
+    frames = [frame.copy() for frame in ImageSequence.Iterator(gif)]
+    frame_index = 0
+    is_last_frame = False
 
     while True:
-        screen.fill(WHITE)
-
-        title = font.render("Menu Principal", True, BLACK)
-        start_text = small_font.render("Solo", True, WHITE)
-        settings_text = small_font.render("Multiplayers", True, WHITE)
-        exit_text = small_font.render("Exit", True, WHITE)
-
-        screen.blit(title, (WIDTH // 3 - 100, HEIGHT // 4))
-        pygame.draw.rect(screen, BLACK, start_button)
-        pygame.draw.rect(screen, BLACK, settings_button)
-        pygame.draw.rect(screen, BLACK, exit_button)
-        screen.blit(start_text, (start_button.x + 20, start_button.y + 10))
-        screen.blit(settings_text, (settings_button.x + 20, settings_button.y + 10))
-        screen.blit(exit_text, (exit_button.x + 20, exit_button.y + 10))
-
-        pygame.display.flip()
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -455,11 +511,61 @@ def menu(screen):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if start_button.collidepoint(event.pos):
                     return "Solo"
+                elif settings_button.collidepoint(event.pos):
+                    return "Multiplayers"
                 elif exit_button.collidepoint(event.pos):
                     pygame.quit()
                     exit()
-                elif settings_button.collidepoint(event.pos):
-                    return "Multiplayers"
+
+        # Ajouter un arrière-plan uni (ou une image fixe)
+        screen.fill((30, 30, 30))  # Couleur de fond gris foncé
+
+        # Obtenir la frame actuelle du GIF
+        """cette partie est faite afin de supprimer le dernier frame du gif car il afficher un ecran blanc"""
+        if not is_last_frame:
+            frame = frames[frame_index]
+            frame = frame.resize((WIDTH, HEIGHT))
+            frame_surface = pygame.image.fromstring(frame.tobytes(), frame.size, frame.mode)
+            screen.blit(frame_surface, (0, 0))
+
+            # Passer à la frame suivante
+            frame_index += 1
+            if frame_index == len(frames):  # Si c'est la dernière frame
+                frame_index = 0
+                is_last_frame = True
+        else:
+            # Afficher la dernière frame et le texte "Menu Principal"
+            last_frame = frames[-1]
+            last_frame = last_frame.resize((WIDTH, HEIGHT))
+            last_frame_surface = pygame.image.fromstring(last_frame.tobytes(), last_frame.size, last_frame.mode)
+            screen.blit(last_frame_surface, (0, 0))
+            is_last_frame = False
+
+        # Afficher le GIF en arrière-plan
+        screen.blit(frame_surface, (0, 0))
+
+        # Titre centré
+        title = font.render("Menu Principal", True, BLACK)
+        screen.blit(title, ((WIDTH - title.get_width()) // 2, start_button.y - 100))
+
+        # Dessiner les boutons et centrer le texte
+        for button, text in [
+            (start_button, "Solo"),
+            (settings_button, "Multiplayers"),
+            (exit_button, "Exit"),
+        ]:
+            pygame.draw.rect(screen, (0, 0, 0), button)  # Fond noir pour les boutons
+            text_surface = small_font.render(text, True, (255, 255, 255))  # Texte blanc
+            text_x = button.x + (button.width - text_surface.get_width()) // 2
+            text_y = button.y + (button.height - text_surface.get_height()) // 2
+            screen.blit(text_surface, (text_x, text_y))
+
+        # Mettre à jour l'écran
+        pygame.display.flip()
+
+        # Passer à la frame suivante
+        frame_index = (frame_index + 1) % len(frames)
+        clock.tick(10)  # Contrôle de la vitesse du GIF (10 FPS)
 
 
 
@@ -502,7 +608,7 @@ def main():
             game = Game(screen)  # Utilise Affichage ici
             game.flip_display()  # Affiche le terrain et les unités
             while True:
-                
+                # L'IA et le joueur alternent les tours
                 result = game.handle_player_turn()  # Le joueur joue son tour
                 if result == "menu":
                     break

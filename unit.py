@@ -69,6 +69,36 @@ class Type_Unite(Unit):
         super().attack(cible, terrain)  # Appel de la méthode `attack` de `Unit`
 
 
+    # def move(self, dx, dy, terrain):
+    #     """Déplace l'unité d'une case en fonction de sa capacité de déplacement."""
+    #     new_x = self.x + dx
+    #     new_y = self.y + dy
+
+    #     print(f"Tentative de déplacement : ({self.x}, {self.y}) -> ({new_x}, {new_y})")
+
+    #     # Vérifier si la position cible est valide
+    #     if 0 <= new_y < 18 and 0 <= new_x < 37:
+    #         target_case = terrain.cases[new_y][new_x]
+    #         print(f"Type de la case cible : {target_case.type_case}")
+
+    #         if target_case.type_case == 'obstacle':
+    #             print("Déplacement bloqué par un obstacle")
+    #             return False
+
+    #         # if target_case.type_case in ['eau', 'feu']:
+    #         #     print("L'unité est morte (eau ou feu)")
+    #         #     self.vie = 0
+    #         #     pygame.quit()
+    #         #     exit()
+
+    #         # Déplacement valide
+    #         self.x = new_x
+    #         self.y = new_y
+    #         return True
+
+    #     print("Déplacement hors limites")
+    #     return False
+
     def move(self, dx, dy, terrain):
         """Déplace l'unité d'une case en fonction de sa capacité de déplacement."""
         # Calculer la nouvelle position
@@ -76,25 +106,20 @@ class Type_Unite(Unit):
         new_y = self.y + dy
         
         # Vérifier si la position est valide
-        if 0 <= new_x < len(terrain.cases) and 0 <= new_y < len(terrain.cases[0]):
+        if 0 <= new_x < 37 and 0 <= new_y < 18:
             target_case = terrain.cases[new_x][new_y]
 
             # Si la case est un obstacle, l'unité ne peut pas avancer
             if target_case.type_case == 'obstacle':
                 return False
-
-            # Si l'unité passe sur de l'eau ou du feu, elle meurt
-            if target_case.type_case == 'eau' or target_case.type_case == 'feu':
-                self.vie = 0
-                pygame.quit()
-                exit()  # L'unité meurt
-
+            
             # Si tout est valide, on déplace l'unité d'une case
             self.x = new_x
             self.y = new_y
             return True
         else:
-            return False  # Si la case cible est en dehors des limites
+            return False  # Si la case cible est en dehors des limites
+
     
 
         
