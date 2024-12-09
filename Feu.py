@@ -1,11 +1,14 @@
-import pygame 
+from game import *
+from unit import * 
+from terain import *
+
 
 class Arme:
     """Classe pour représenter une arme."""
-    def __init__(self, nom, degats, vitesse, effet):
+    def __init__(self, nom, degats, deplacement_distance, effet):
         self.nom = nom
         self.degats = degats
-        self.vitesse = vitesse
+        self.deplacement_distance = deplacement_distance
         self.effet = effet  # Une fonction représentant l'effet de l'arme
 
     def utiliser(self, utilisateur, cible, terrain=None):
@@ -37,20 +40,31 @@ def lance_effet(utilisateur, cible, terrain=None):
     if dy != 0: dy = dy // abs(dy)
     cible.move(dx, dy, terrain)
 
-def bombe_effet(utilisateur, cible, terrain=None):
-    """Effet de la bombe : inflige des dégâts de zone."""
+def bombe_effet(utilisateur, cible, terrain=None, toutes_unites=None):
+    """Effet simplifié de la bombe : inflige des dégâts de zone."""
     print(f"{utilisateur.nom} utilise une BOMBE sur {cible.nom}!")
+
+    # Définir la zone d'effet autour de la cible
     zone = [
         (cible.x-1, cible.y), (cible.x+1, cible.y),
         (cible.x, cible.y-1), (cible.x, cible.y+1),
-        (cible.x, cible.y)  # Inclure la case de la cible
+        (cible.x, cible.y)  # Inclure la case de la cible elle-même
     ]
-    for u in utilisateur.game.player_units + utilisateur.game.enemy_units:
+
+    # Si la liste de toutes les unités n'est pas fournie, on ne fait rien
+    if toutes_unites is None:
+        print("Erreur : Liste des unités non spécifiée.")
+        return
+
+    # Applique les dégâts à toutes les unités dans la zone
+    for u in toutes_unites:
         if (u.x, u.y) in zone:
+            print(f"{u.nom} est dans la zone d'effet de la bombe !")
             u.recevoir_degats(40)
 
 
-epee = Arme("Épée", degats=30, vitesse=5, effet=epee_effet)
-arc = Arme("Arc", degats=20, vitesse=10, effet=arc_effet)
-lance = Arme("Lance", degats=25, vitesse=8, effet=lance_effet)
-bombe = Arme("Bombe", degats=40, vitesse=3, effet=bombe_effet)
+
+epee = Arme("Épée", degats=30, deplacement_distance=5, effet=epee_effet)
+arc = Arme("Arc", degats=20, deplacement_distance=10, effet=arc_effet)
+lance = Arme("Lance", degats=25, deplacement_distance=8, effet=lance_effet)
+bombe = Arme("Bombe", degats=40, deplacement_distance=3, effet=bombe_effet)
