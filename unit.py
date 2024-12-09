@@ -8,8 +8,11 @@ from Feu import *
 # Constantes
 GRID_SIZE = 8
 CELL_SIZE = 40
-WIDTH = GRID_SIZE * CELL_SIZE
-HEIGHT = GRID_SIZE * CELL_SIZE
+# WIDTH = GRID_SIZE * CELL_SIZE
+# HEIGHT = GRID_SIZE * CELL_SIZE
+WIDTH = NUM_COLUMNS* CELL_SIZE
+HEIGHT = NUM_ROWS * CELL_SIZE
+
 FPS = 30
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -106,12 +109,14 @@ class Type_Unite(Unit):
         new_y = self.y + dy
         
         # Vérifier si la position est valide
-        if 0 <= new_x < 37 and 0 <= new_y < 18:
+        if 0 <= new_x < NUM_COLUMNS and 0 <= new_y < NUM_ROWS-1: #-1 pour enlever la ligne du tableau en bas
             target_case = terrain.cases[new_x][new_y]
 
             # Si la case est un obstacle, l'unité ne peut pas avancer
-            if target_case.type_case == 'obstacle':
+            if target_case.type_case == 1:
                 return False
+            elif target_case.type_case == 2 :
+                self.vie -= 10 #on perd 10 points de santé si on passe par l'herbe 
             
             # Si tout est valide, on déplace l'unité d'une case
             self.x = new_x

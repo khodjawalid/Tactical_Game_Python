@@ -8,11 +8,13 @@ from main import *
 # Charger les images (icônes)
 
 icon_obstacle = pygame.image.load("image/obstacle.jpg")
+icon_herbe = pygame.image.load("image/Herbe.jpg")
+
 
 CELL_SIZE = 40
 
 icon_obstacle = pygame.transform.scale(icon_obstacle, (CELL_SIZE, CELL_SIZE))
-
+icon_herbe = pygame.transform.scale(icon_herbe, (CELL_SIZE, CELL_SIZE))
 class Case:
     def __init__(self, type_case, x, y, effet=None):
         self.type_case = type_case
@@ -26,6 +28,8 @@ class Case:
 
         if self.type_case == 1:
             screen.blit(icon_obstacle, position)
+        elif self.type_case == 2 :
+            screen.blit(icon_herbe, position)
         else :
             pass
 
@@ -65,14 +69,18 @@ class Terrain:
         [19,6], [18,6], [19,7], [18,7],
         ]
 
-        for x in range(self.hauteur):
+        for x in range(self.largeur):
             ligne = []
-            for y in range(self.largeur):
+            for y in range(self.hauteur):
 
                 if [x,y] in liste_obstacles :
                     case_type = 1  # Obstacle
+                 
+                elif random.random() < 0.05 : #Probabilité d'avoir du herbe de 5%
+                    case_type = 2
                 else :  # Ajouter un peu de hasard
                     case_type = 0  # Obstacle ponctuel
+                
 
                     # Créer une nouvelle case avec le type sélectionné
                 nouvelle_case = Case(case_type, x, y)

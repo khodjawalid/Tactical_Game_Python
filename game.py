@@ -1,5 +1,5 @@
 import pygame
-from terain import * # Vérifiez que 'terain' est bien importé, cela semble être une faute de frappe pour 'terrain'
+from terain import * 
 from unit import *
 from main import *
 from Feu import *
@@ -9,18 +9,16 @@ from PIL import Image, ImageSequence
 
 # Constantes globales
 
-WIDTH = 37* 40  # Largeur de la fenêtre (15 cases de 40 pixels)
-HEIGHT = 18 * 40  # Hauteur de la fenêtre (15 cases de 40 pixels)
-
-TABLEAU_HEIGHT = 40  # Hauteur du tableau d'affichage en bas
-CELL_SIZE = 40  # Taille de chaque case (40x40 pixels)
-
+NUM_COLUMNS = 37
+NUM_ROWS = 18
+WIDTH = NUM_COLUMNS* 40  # Largeur de la fenêtre (15 cases de 40 pixels)
+HEIGHT = NUM_ROWS * 40  
 CREAM = (245, 245, 220)  # Couleur crème pour l'arrière-plan
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-NUM_COLUMNS = 37
-NUM_ROWS = 18
+TABLEAU_HEIGHT = 40  # Hauteur du tableau d'affichage en bas
+CELL_SIZE = 40  # Taille de chaque case (40x40 pixels)
 
 # Taille des images des unités
 UNIT_IMAGE_SIZE = (40, 40)  # Taille redimensionnée des images (40x40 pixels)
@@ -41,21 +39,21 @@ class Game:
         epee = Arme("Épée", degats=30, deplacement_distance=5, effet=epee_effet)
         arc = Arme("Arc", degats=20, deplacement_distance=10, effet=arc_effet)
         lance = Arme("Lance", degats=25, deplacement_distance=8, effet=lance_effet)
-        bombe = Arme("Bombe", degats=40, deplacement_distance=3, effet=bombe_effet)
+        # bombe = Arme("Bombe", degats=40, deplacement_distance=3, effet=bombe_effet)
 
         # Initialisation des unités des joueurs
         self.player_units = [
             Type_Unite("Alex", 0, 0,  100, 30, "player", 10, 1, [competence_soin],epee ,"0"),
             Type_Unite("Clara", 0, 1, 100, 25, "player", 15, 2, [competence_attaque_puissante],arc,"1"),
             Type_Unite("Maxime", 0, 2, 100, 35, "player", 10, 3, [competence_attaque_puissante],lance ,"2"),
-            Type_Unite("Sophie", 0, 3, 100, 20, "player", 20, 4, [competence_soin], bombe ,"3"),
+            Type_Unite("Sophie", 0, 3, 100, 20, "player", 20, 4, [competence_soin], arc ,"3"),
         ]
 
         self.enemy_units = [
-            Type_Unite("Alex", 28, 10, 100, 30, "enemy", 10, 1, [competence_soin], epee ,"0"),
-            Type_Unite("Clara", 28, 9, 100, 25, "enemy", 15, 2, [competence_attaque_puissante], arc , "1"),
-            Type_Unite("Maxime", 28, 12, 100, 35, "enemy", 10, 3, [competence_attaque_puissante],lance , "2"),
-            Type_Unite("Sophie", 28, 11, 100, 20, "enemy", 20, 4, [competence_soin], bombe, "3"),
+            Type_Unite("Alex", 36, 10, 100, 30, "enemy", 10, 1, [competence_soin], epee ,"0"),
+            Type_Unite("Clara", 36, 11, 100, 25, "enemy", 15, 2, [competence_attaque_puissante], arc , "1"),
+            Type_Unite("Maxime", 36, 12, 100, 35, "enemy", 10, 3, [competence_attaque_puissante],lance , "2"),
+            Type_Unite("Sophie", 36, 13, 100, 20, "enemy", 20, 4, [competence_soin], arc, "3"),
         ]
 
         for unit in self.player_units + self.enemy_units:
@@ -75,10 +73,25 @@ class Game:
             selected_unit.is_selected = True
             self.flip_display()
 
+            # Gestion du déplacement en fonction de l'unité
+            if selected_unit.nom == "Alex":
+                max_distance = 1  
+            elif selected_unit.nom == "Clara":
+                max_distance = 2  
+            elif selected_unit.nom == "Maxime":
+                max_distance = 3  
+            elif selected_unit.nom == "Sophie":
+                max_distance = 4  
+            else:
+                max_distance = selected_unit.deplacement_distance  
+
             # Calcul et affichage des cases accessibles
             accessible_cells = self.get_accessible_cells(selected_unit)
             self.draw_accessible_cells(accessible_cells)
             pygame.display.flip()
+
+            # Position actuelle du curseur pour sélectionner une case
+            cursor_x, cursor_y = selected_unit.x, selected_unit.y
 
             while not has_acted:
                 for event in pygame.event.get():
@@ -89,83 +102,79 @@ class Game:
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
                             return "menu"
-                        dx, dy = 0, 0
 
-                        # Gestion du déplacement en fonction de l'unité
-                        if selected_unit.nom == "Alex":
-                            max_distance = 1  
-                        elif selected_unit.nom == "Clara":
-                            max_distance = 2  
-                        elif selected_unit.nom == "Maxime":
-                            max_distance = 3  
-                        elif selected_unit.nom == "Sophie":
-                            max_distance = 4  
-                        else:
-                            max_distance = selected_unit.deplacement_distance  
-
-                        # Déplacement
+                        # Déplacement du curseur avec les flèches du clavier
                         if event.key == pygame.K_LEFT:
-                            dx = -1
+                            if (cursor_x - 1, cursor_y) in accessible_cells:
+                                cursor_x -= 1
                         elif event.key == pygame.K_RIGHT:
-                            dx = 1
+                            if (cursor_x + 1, cursor_y) in accessible_cells:
+                                cursor_x += 1
                         elif event.key == pygame.K_UP:
-                            dy = -1
+                            if (cursor_x, cursor_y - 1) in accessible_cells:
+                                cursor_y -= 1
                         elif event.key == pygame.K_DOWN:
-                            dy = 1
+                            if (cursor_x, cursor_y + 1) in accessible_cells:
+                                cursor_y += 1
 
-                        distance_moved = 0
-                        while distance_moved < max_distance:
-                            target_x = selected_unit.x + dx
-                            target_y = selected_unit.y + dy
+                        # Mise à jour de l'affichage du curseur
+                        self.flip_display()
+                        self.draw_accessible_cells(accessible_cells)
+                        # Dessiner le curseur en rouge
+                        cursor_rect = pygame.Rect(cursor_x * CELL_SIZE, cursor_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                        pygame.draw.rect(self.screen, (255, 0, 0), cursor_rect, 3)  # Rouge pour le curseur
+                        pygame.display.flip()
 
-                            if any(unit.x == target_x and unit.y == target_y for unit in self.player_units + self.enemy_units):
-                                break
-
-                            if selected_unit.move(dx, dy, self.terrain):
-                                distance_moved += 1
+                        # Valider le déplacement avec Entrée
+                        if event.key == pygame.K_RETURN:
+                            if (cursor_x, cursor_y) in accessible_cells:
+                                # Déplacer l'unité vers la case sélectionnée
+                                selected_unit.x, selected_unit.y = cursor_x, cursor_y
                                 self.flip_display()
-                            else:
-                                break
+                                has_acted = True  # Fin du tour pour cette unité
 
-                        if (selected_unit.x + dx, selected_unit.y + dy) in accessible_cells:
-                            target_x = selected_unit.x + dx
-                            target_y = selected_unit.y + dy
-                            if not any(unit.x == target_x and unit.y == target_y for unit in self.player_units + self.enemy_units):
-                                if selected_unit.move(dx, dy, self.terrain):
-                                    self.flip_display()
-                                    self.draw_accessible_cells(accessible_cells)
-                                    pygame.display.flip()
                         # Attaque avec la barre espace
                         if event.key == pygame.K_SPACE:
                             for enemy in self.enemy_units:
-                                if abs(selected_unit.x - enemy.x) <= 1 and abs(selected_unit.y - enemy.y) <= 1:
+                                if abs(selected_unit.x - enemy.x) <= select_player.deplacement_distance and abs(selected_unit.y - enemy.y) <= select_player.deplacement_distance:
                                     selected_unit.attaquer_avec_arme(enemy, self.terrain)
-                                    # print(f" {enemy.nom} est à attaquer ")
-                                    # print(f"{ enemy.nom } est le reste { enemy.vie}")
                                     if enemy.vie <= 0:
                                         self.enemy_units.remove(enemy)
-                                        print(enemy.nom , 'est éliminé ')
+                                        print(enemy.nom, 'est éliminé ')
                                         self.player_score += 1
+                                    has_acted = True  # Fin du tour pour cette unité
 
-                        # Après que l'unité ait agi, fin du tour pour cette unité
-                        has_acted = True
-                        selected_unit.is_selected = False  # Désélectionner l'unité
-                        # Vérifie les collisions après chaque tour
-            # Fin du tour du joueur (quand une unité a agi)
-            self.tour += 1
+            selected_unit.is_selected = False  # Désélectionner l'unité
+            self.tour += 1  # Passer au tour suivant
+
 
 
     def handle_enemy_turn(self):
-        # Tour de l'ennemi : choisir une unité parmi les 4
+        # Tour de l'ennemi : choisir une unité parmi les ennemis
         for selected_unit in self.enemy_units:
             has_acted = False
             selected_unit.is_selected = True
             self.flip_display()
 
+            # Gestion du déplacement en fonction de l'unité
+            if selected_unit.nom == "Alex":
+                max_distance = 1  
+            elif selected_unit.nom == "Clara":
+                max_distance = 2  
+            elif selected_unit.nom == "Maxime":
+                max_distance = 3  
+            elif selected_unit.nom == "Sophie":
+                max_distance = 4  
+            else:
+                max_distance = selected_unit.deplacement_distance  
+
             # Calcul et affichage des cases accessibles
             accessible_cells = self.get_accessible_cells(selected_unit)
             self.draw_accessible_cells(accessible_cells)
             pygame.display.flip()
+
+            # Position actuelle du curseur pour sélectionner une case
+            cursor_x, cursor_y = selected_unit.x, selected_unit.y
 
             while not has_acted:
                 for event in pygame.event.get():
@@ -176,75 +185,54 @@ class Game:
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
                             return "menu"
-                        dx, dy = 0, 0
 
-                        # Gestion du déplacement en fonction de l'unité
-                        if selected_unit.nom == "Alex":
-                            max_distance = 1  # Alex bouge de 1 case
-                        elif selected_unit.nom == "Clara":
-                            max_distance = 2  # Clara bouge de 2 cases
-                        elif selected_unit.nom == "Maxime":
-                            max_distance = 3  # Maxime bouge de 3 cases
-                        elif selected_unit.nom == "Sophie":
-                            max_distance = 4  # Sophie bouge de 4 cases
-                        else:
-                            max_distance = selected_unit.deplacement_distance  
-
-                        # Déplacement
+                        # Déplacement du curseur avec les flèches du clavier
                         if event.key == pygame.K_LEFT:
-                            dx = -1
+                            if (cursor_x - 1, cursor_y) in accessible_cells:
+                                cursor_x -= 1
                         elif event.key == pygame.K_RIGHT:
-                            dx = 1
+                            if (cursor_x + 1, cursor_y) in accessible_cells:
+                                cursor_x += 1
                         elif event.key == pygame.K_UP:
-                            dy = -1
+                            if (cursor_x, cursor_y - 1) in accessible_cells:
+                                cursor_y -= 1
                         elif event.key == pygame.K_DOWN:
-                            dy = 1
+                            if (cursor_x, cursor_y + 1) in accessible_cells:
+                                cursor_y += 1
 
-                        distance_moved = 0
-                        while distance_moved < max_distance:
-                            target_x = selected_unit.x + dx
-                            target_y = selected_unit.y + dy
+                        # Mise à jour de l'affichage du curseur
+                        self.flip_display()
+                        self.draw_accessible_cells(accessible_cells)
+                        # Dessiner le curseur en rouge
+                        cursor_rect = pygame.Rect(cursor_x * CELL_SIZE, cursor_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                        pygame.draw.rect(self.screen, (255, 0, 0), cursor_rect, 3)  # Rouge pour le curseur
+                        pygame.display.flip()
 
-                            if any(unit.x == target_x and unit.y == target_y for unit in self.player_units + self.enemy_units):
-                                break
-
-                            if selected_unit.move(dx, dy, self.terrain):
-                                distance_moved += 1
+                        # Valider le déplacement avec Entrée
+                        if event.key == pygame.K_RETURN:
+                            if (cursor_x, cursor_y) in accessible_cells:
+                                # Déplacer l'unité vers la case sélectionnée
+                                selected_unit.x, selected_unit.y = cursor_x, cursor_y
                                 self.flip_display()
-                            else:
-                                break
-
-                        if (selected_unit.x + dx, selected_unit.y + dy) in accessible_cells:
-                            target_x = selected_unit.x + dx
-                            target_y = selected_unit.y + dy
-                            if not any(unit.x == target_x and unit.y == target_y for unit in self.player_units + self.enemy_units):
-                                if selected_unit.move(dx, dy, self.terrain):
-                                    self.flip_display()
-                                    self.draw_accessible_cells(accessible_cells)
-                                    pygame.display.flip()
+                                has_acted = True  # Fin du tour pour cette unité
 
                         # Attaque avec la barre espace
                         if event.key == pygame.K_SPACE:
                             for player in self.player_units:
                                 # Vérifie si le joueur est adjacent à l'ennemi
-                                if abs(selected_unit.x - player.x) <= 1 and abs(selected_unit.y - player.y) <= 1: ## si le nombre de case < 3 il peut attaquer ( à chnager après)
+                                if abs(selected_unit.x - player.x) <= select_player.deplacement_distance and abs(selected_unit.y - player.y) <= select_player.deplacement_distance: 
                                     # Effectue l'attaque
                                     selected_unit.attaquer_avec_arme(player, self.terrain)
-                                    # print(f"{player.nom} est attaqué")
-                                    # print(f"La vie restante de {player.nom} est {player.vie}")
                                     
                                     # Si la vie du joueur tombe à 0, il est retiré
                                     if player.vie <= 0:
                                         self.player_units.remove(player)
                                         self.enemy_score += 1
                                         print(f"{player.nom} est éliminé")
+                                    has_acted = True  # Fin du tour pour cette unité
 
-                        # Après que l'unité ait agi, fin du tour pour cette unité
-                        has_acted = True
-                        selected_unit.is_selected = False  # Désélectionner l'unité
-
-            # Fin du tour de l'ennemi (quand une unité a agi)
-            self.tour += 1
+            selected_unit.is_selected = False  # Désélectionner l'unité
+            self.tour += 1  # Passer au tour suivant
 
 
     
@@ -295,8 +283,8 @@ class Game:
     def afficher_tableau(self):
         #Affichage au milieu de la fenetre 
         """Affiche le tableau d'affichage des scores en bas."""
-        font = pygame.font.Font(None, 36)
-        tableau_rect = pygame.Rect(0, HEIGHT - TABLEAU_HEIGHT, WIDTH, TABLEAU_HEIGHT)
+        font = pygame.font.Font(None, 30)
+        tableau_rect = pygame.Rect(0, HEIGHT - TABLEAU_HEIGHT, WIDTH, TABLEAU_HEIGHT *2)
         SAND_COLOR = (194, 178, 128)
 
         pygame.draw.rect(self.screen, SAND_COLOR, tableau_rect)
@@ -316,49 +304,43 @@ class Game:
         self.screen.blit(score_text, (text_x, text_y))
     
     def get_accessible_cells(self, unit):
-        """
-        Retourne une liste de cases accessibles dans les 4 directions cardinales,
-        en vérifiant que les cases sont dans la grille et qu'aucune unité ne s'y trouve.
-        """
+       
         accessible_cells = []
         max_distance = unit.deplacement_distance
-        max_width = 34 *40 
-        max_height = 18*34
- 
 
-        # Directions rectilignes (haut, bas, gauche, droite)
-        directions = [
-            (0, -1),  # Haut
-            (0, 1),   # Bas
-            (-1, 0),  # Gauche
-            (1, 0)    # Droite
-        ]
 
-        for dx, dy in directions:
-            for step in range(1, max_distance + 1):
-                target_x = unit.x + dx * step
-                target_y = unit.y + dy * step
+
+        # Vérification de toutes les cases dans un carré de côté 2*max_distance+1 centré sur l'unité
+        for dx in range(-max_distance, max_distance + 1):
+            for dy in range(-max_distance, max_distance + 1):
+                # Calcul des coordonnées de la case cible
+                target_x = unit.x + dx
+                target_y = unit.y + dy
 
                 # Vérifier que la case est dans les limites de la grille
-                if 0 <= target_x < max_width and 0 <= target_y < max_height:
+                if 0 <= target_x < NUM_COLUMNS and 0 <= target_y < NUM_ROWS -1:
+                    # Récupérer la case cible dans le terrain
+                    target_case = self.terrain.cases[target_x][target_y]  
+
+                    # Vérifier que la case n'est pas un obstacle
+                    if target_case.type_case == 1 :
+                        # print(f"Case ({target_x}, {target_y}) est un obstacle, ignorée.")
+                        continue  # Ignorer cette case
+
                     # Vérifier qu'aucune unité ne se trouve sur la case
                     if not any(u.x == target_x and u.y == target_y for u in self.player_units + self.enemy_units):
                         accessible_cells.append((target_x, target_y))
-                    else:
-                        # Si une unité bloque la case, arrêter l'exploration dans cette direction
-                        break
-                else:
-                    # Si la case dépasse la grille, arrêter l'exploration dans cette direction
-                    break
 
         return accessible_cells
 
+    
+
 
     def draw_accessible_cells(self, accessible_cells):
-        """Dessine les cases accessibles en bleu."""
+        """Dessine les cases accessibles ."""
         for x, y in accessible_cells:
             rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            pygame.draw.rect(self.screen, (0, 0, 255), rect, 3)  # Dessine les cases en bleu
+            pygame.draw.rect(self.screen, (255, 255, 150), rect, 2)  # Dessine les cases en bleu
 
 
 
@@ -447,7 +429,7 @@ def play_gif_background(gif_path, screen):
 def splash_screen(screen):
     """Affiche un écran de démarrage avec une image de fond et attend une touche."""
    
-    splash_image = pygame.image.load("image/K.png")  
+    splash_image = pygame.image.load("image/menu12.jpg")  
     splash_image = pygame.transform.scale(splash_image, (WIDTH, HEIGHT + + TABLEAU_HEIGHT))
     
  
@@ -482,7 +464,8 @@ def menu(screen):
     button_width = 200
     button_height = 50
     button_spacing = 20  # Espace entre les boutons
-
+    
+    splash_screen(screen)
     # Calcul des positions pour centrer les boutons verticalement
     total_height = 3 * button_height + 2 * button_spacing  # Hauteur totale des boutons et des espaces
     start_button = pygame.Rect((WIDTH - button_width) // 2, (HEIGHT - total_height) // 2, button_width, button_height)

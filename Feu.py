@@ -40,31 +40,31 @@ def lance_effet(utilisateur, cible, terrain=None):
     if dy != 0: dy = dy // abs(dy)
     cible.move(dx, dy, terrain)
 
-def bombe_effet(utilisateur, cible, terrain=None, toutes_unites=None):
-    """Effet simplifié de la bombe : inflige des dégâts de zone."""
-    print(f"{utilisateur.nom} utilise une BOMBE sur {cible.nom}!")
+# def bombe_effet(utilisateur, cible, terrain=None, toutes_unites=None):
+#     """Effet simplifié de la bombe : inflige des dégâts de zone."""
+#     print(f"{utilisateur.nom} utilise une BOMBE sur {cible.nom}!")
 
-    # Définir la zone d'effet autour de la cible
-    zone = [
-        (cible.x-1, cible.y), (cible.x+1, cible.y),
-        (cible.x, cible.y-1), (cible.x, cible.y+1),
-        (cible.x, cible.y)  # Inclure la case de la cible elle-même
-    ]
+#     # Définir la zone d'effet autour de la cible
+#     zone = [
+#         (cible.x-1, cible.y), (cible.x+1, cible.y),
+#         (cible.x, cible.y-1), (cible.x, cible.y+1),
+#         (cible.x, cible.y)  # Inclure la case de la cible elle-même
+#     ]
 
-    # Si la liste de toutes les unités n'est pas fournie, on ne fait rien
-    if toutes_unites is None:
-        print("Erreur : Liste des unités non spécifiée.")
-        return
+#     # Si la liste de toutes les unités n'est pas fournie, on ne fait rien
+#     if toutes_unites is None:
+#         print("Erreur : Liste des unités non spécifiée.")
+#         return
 
-    # Applique les dégâts à toutes les unités dans la zone
-    for u in toutes_unites:
-        if (u.x, u.y) in zone:
-            print(f"{u.nom} est dans la zone d'effet de la bombe !")
-            u.recevoir_degats(40)
+#     # Applique les dégâts à toutes les unités dans la zone
+#     for u in toutes_unites:
+#         if (u.x, u.y) in zone:
+#             print(f"{u.nom} est dans la zone d'effet de la bombe !")
+#             u.recevoir_degats(40)
 
 
 
 epee = Arme("Épée", degats=30, deplacement_distance=5, effet=epee_effet)
 arc = Arme("Arc", degats=20, deplacement_distance=10, effet=arc_effet)
 lance = Arme("Lance", degats=25, deplacement_distance=8, effet=lance_effet)
-bombe = Arme("Bombe", degats=40, deplacement_distance=3, effet=bombe_effet)
+# bombe = Arme("Bombe", degats=40, deplacement_distance=3, effet=bombe_effet)
