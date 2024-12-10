@@ -182,6 +182,10 @@ class Type_Unite:
         """Effectuer une attaque en prenant en compte la défense de la cible."""
         degats = max(0, self.attack_power - cible.defense)
         cible.recevoir_degats(degats)
+        if cible.health==0:
+            self.remove(cible)
+
+
 
     def recevoir_degats(self, degats):
         """Réduire les points de vie en fonction des dégâts subis."""
@@ -212,6 +216,16 @@ class Type_Unite:
         return (f"Unité({self.nom}, {self.x}, {self.y}, Vie: {self.health}, Attaque: {self.attack_power}, "
                 f"Défense: {self.defense}, Vitesse: {self.vitesse}, "
                 f"Compétences: {competences_str})")
+
+
+    def __estExisteCompetance(self,com):
+        for i in self.competences:
+            if i==com:
+                return True
+        return False
+    def ajouteComppetance(self,comp):
+        if self.__estExisteCompetance(comp)==False:
+            self.competences.append(comp)
 
 
 
