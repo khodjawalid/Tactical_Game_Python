@@ -27,7 +27,7 @@ class Game:
     def __init__(self, screen):
         self.start_time = pygame.time.get_ticks()
         self.screen = screen
-        self.tour = 1
+        self.tour = 0
         self.player_score = 0
         self.enemy_score = 0
         
@@ -64,7 +64,7 @@ class Game:
         self.terrain = Terrain(NUM_COLUMNS, NUM_ROWS)  # Correction de 'terain' en 'terrain'
         self.terrain.generer_grille()
     
-
+    
 
     def handle_player_turn(self):
         # Tour du joueur : choisir une unité parmi les 4
@@ -72,18 +72,6 @@ class Game:
             has_acted = False
             selected_unit.is_selected = True
             self.flip_display()
-
-            # Gestion du déplacement en fonction de l'unité
-            if selected_unit.nom == "Alex":
-                max_distance = 1  
-            elif selected_unit.nom == "Clara":
-                max_distance = 2  
-            elif selected_unit.nom == "Maxime":
-                max_distance = 3  
-            elif selected_unit.nom == "Sophie":
-                max_distance = 4  
-            else:
-                max_distance = selected_unit.deplacement_distance  
 
             # Calcul et affichage des cases accessibles
             accessible_cells = self.get_accessible_cells(selected_unit)
@@ -120,6 +108,7 @@ class Game:
                         # Mise à jour de l'affichage du curseur
                         self.flip_display()
                         self.draw_accessible_cells(accessible_cells)
+
                         # Dessiner le curseur en rouge
                         cursor_rect = pygame.Rect(cursor_x * CELL_SIZE, cursor_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                         pygame.draw.rect(self.screen, (255, 0, 0), cursor_rect, 3)  # Rouge pour le curseur
@@ -128,15 +117,18 @@ class Game:
                         # Valider le déplacement avec Entrée
                         if event.key == pygame.K_RETURN:
                             if (cursor_x, cursor_y) in accessible_cells:
+
                                 # Déplacer l'unité vers la case sélectionnée
-                                selected_unit.x, selected_unit.y = cursor_x, cursor_y
+                                selected_unit.move(cursor_x, cursor_y, self.terrain)
+                                
                                 self.flip_display()
+                            
                                 has_acted = True  # Fin du tour pour cette unité
 
                         # Attaque avec la barre espace
                         if event.key == pygame.K_SPACE:
                             for enemy in self.enemy_units:
-                                if abs(selected_unit.x - enemy.x) <= select_player.deplacement_distance and abs(selected_unit.y - enemy.y) <= select_player.deplacement_distance:
+                                if abs(selected_unit.x - enemy.x) <= selected_unit.deplacement_distance and abs(selected_unit.y - enemy.y) <= select_player.deplacement_distance:
                                     selected_unit.attaquer_avec_arme(enemy, self.terrain)
                                     if enemy.vie <= 0:
                                         self.enemy_units.remove(enemy)
@@ -156,18 +148,6 @@ class Game:
             selected_unit.is_selected = True
             self.flip_display()
 
-            # Gestion du déplacement en fonction de l'unité
-            if selected_unit.nom == "Alex":
-                max_distance = 1  
-            elif selected_unit.nom == "Clara":
-                max_distance = 2  
-            elif selected_unit.nom == "Maxime":
-                max_distance = 3  
-            elif selected_unit.nom == "Sophie":
-                max_distance = 4  
-            else:
-                max_distance = selected_unit.deplacement_distance  
-
             # Calcul et affichage des cases accessibles
             accessible_cells = self.get_accessible_cells(selected_unit)
             self.draw_accessible_cells(accessible_cells)
@@ -211,16 +191,23 @@ class Game:
                         # Valider le déplacement avec Entrée
                         if event.key == pygame.K_RETURN:
                             if (cursor_x, cursor_y) in accessible_cells:
-                                # Déplacer l'unité vers la case sélectionnée
-                                selected_unit.x, selected_unit.y = cursor_x, cursor_y
+            
+                                 # Déplacer l'unité vers la case sélectionnée
+                                print(selected_unit.move(cursor_x, cursor_y, self.terrain))
                                 self.flip_display()
                                 has_acted = True  # Fin du tour pour cette unité
+
+
+                                # Déplacer l'unité vers la case sélectionnée
+                                #selected_unit.x, selected_unit.y = cursor_x, cursor_y
+                                #self.flip_display()
+                                #has_acted = True  # Fin du tour pour cette unité
 
                         # Attaque avec la barre espace
                         if event.key == pygame.K_SPACE:
                             for player in self.player_units:
                                 # Vérifie si le joueur est adjacent à l'ennemi
-                                if abs(selected_unit.x - player.x) <= select_player.deplacement_distance and abs(selected_unit.y - player.y) <= select_player.deplacement_distance: 
+                                if abs(selected_unit.x - player.x) <= selected_unit.deplacement_distance and abs(selected_unit.y - player.y) <= select_player.deplacement_distance: 
                                     # Effectue l'attaque
                                     selected_unit.attaquer_avec_arme(player, self.terrain)
                                     
@@ -233,25 +220,6 @@ class Game:
 
             selected_unit.is_selected = False  # Désélectionner l'unité
             self.tour += 1  # Passer au tour suivant
-
-
-    
-
-    def get_nearest_player(self, unit):
-        """Retourne l'unité du joueur la plus proche."""
-        nearest_player = self.player_units[0]
-        min_distance = float('inf')
-
-        for player in self.player_units:
-            distance = abs(unit.x - player.x) + abs(unit.y - player.y)
-            if distance < min_distance:
-                min_distance = distance
-                nearest_player = player
-
-        return nearest_player
-
-
-
 
 
     def flip_display(self):
@@ -308,8 +276,6 @@ class Game:
         accessible_cells = []
         max_distance = unit.deplacement_distance
 
-
-
         # Vérification de toutes les cases dans un carré de côté 2*max_distance+1 centré sur l'unité
         for dx in range(-max_distance, max_distance + 1):
             for dy in range(-max_distance, max_distance + 1):
@@ -322,18 +288,15 @@ class Game:
                     # Récupérer la case cible dans le terrain
                     target_case = self.terrain.cases[target_x][target_y]  
 
-                    # Vérifier que la case n'est pas un obstacle
-                    if target_case.type_case == 1 :
-                        # print(f"Case ({target_x}, {target_y}) est un obstacle, ignorée.")
+                    # Vérifier que la case n'est pas un obstacle ou contient un autre joueur 
+                    if target_case.type_case == 1 or any(u.x == target_x and u.y == target_y for u in self.player_units + self.enemy_units) :
                         continue  # Ignorer cette case
 
                     # Vérifier qu'aucune unité ne se trouve sur la case
-                    if not any(u.x == target_x and u.y == target_y for u in self.player_units + self.enemy_units):
+                    else :
                         accessible_cells.append((target_x, target_y))
 
         return accessible_cells
-
-    
 
 
     def draw_accessible_cells(self, accessible_cells):
@@ -596,6 +559,11 @@ def main():
                 if result == "menu":
                     break
                 game.handle_enemy_turn()  # L'IA joue après
+
+                if game.tour %8 == 0 :
+                    game.terrain.melanger()
+
+
  
 
 if __name__ == "__main__":

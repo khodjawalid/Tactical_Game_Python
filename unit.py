@@ -10,6 +10,10 @@ GRID_SIZE = 8
 CELL_SIZE = 40
 # WIDTH = GRID_SIZE * CELL_SIZE
 # HEIGHT = GRID_SIZE * CELL_SIZE
+
+NUM_COLUMNS = 37
+NUM_ROWS = 18
+
 WIDTH = NUM_COLUMNS* CELL_SIZE
 HEIGHT = NUM_ROWS * CELL_SIZE
 
@@ -72,52 +76,25 @@ class Type_Unite(Unit):
         super().attack(cible, terrain)  # Appel de la méthode `attack` de `Unit`
 
 
-    # def move(self, dx, dy, terrain):
-    #     """Déplace l'unité d'une case en fonction de sa capacité de déplacement."""
-    #     new_x = self.x + dx
-    #     new_y = self.y + dy
 
-    #     print(f"Tentative de déplacement : ({self.x}, {self.y}) -> ({new_x}, {new_y})")
-
-    #     # Vérifier si la position cible est valide
-    #     if 0 <= new_y < 18 and 0 <= new_x < 37:
-    #         target_case = terrain.cases[new_y][new_x]
-    #         print(f"Type de la case cible : {target_case.type_case}")
-
-    #         if target_case.type_case == 'obstacle':
-    #             print("Déplacement bloqué par un obstacle")
-    #             return False
-
-    #         # if target_case.type_case in ['eau', 'feu']:
-    #         #     print("L'unité est morte (eau ou feu)")
-    #         #     self.vie = 0
-    #         #     pygame.quit()
-    #         #     exit()
-
-    #         # Déplacement valide
-    #         self.x = new_x
-    #         self.y = new_y
-    #         return True
-
-    #     print("Déplacement hors limites")
-    #     return False
-
-    def move(self, dx, dy, terrain):
-        """Déplace l'unité d'une case en fonction de sa capacité de déplacement."""
+    def move(self, new_x,new_y, terrain):
+        """deplace l'unité vers les nouvelles coordonnées selon les conditions"""
         # Calculer la nouvelle position
-        new_x = self.x + dx
-        new_y = self.y + dy
         
         # Vérifier si la position est valide
         if 0 <= new_x < NUM_COLUMNS and 0 <= new_y < NUM_ROWS-1: #-1 pour enlever la ligne du tableau en bas
             target_case = terrain.cases[new_x][new_y]
-
+            
             # Si la case est un obstacle, l'unité ne peut pas avancer
             if target_case.type_case == 1:
                 return False
+            
             elif target_case.type_case == 2 :
                 self.vie -= 10 #on perd 10 points de santé si on passe par l'herbe 
             
+            elif target_case.type_case == 3 : 
+                self.vie += (100-self.vie)  #remettr la barre de vie à jour 
+
             # Si tout est valide, on déplace l'unité d'une case
             self.x = new_x
             self.y = new_y
@@ -125,9 +102,7 @@ class Type_Unite(Unit):
         else:
             return False  # Si la case cible est en dehors des limites
 
-    
 
-        
 
     def update_health(self, surface):
         bar_width = 40
