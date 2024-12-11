@@ -180,18 +180,27 @@ class Type_Unite:
 
     def attaquer(self, cible):
         """Effectuer une attaque en prenant en compte la défense de la cible."""
-        degats = max(0, self.attack_power - cible.defense)
-        cible.recevoir_degats(degats)
-        if cible.health==0:
-            self.remove(cible)
+        degats = self.attack_power - cible.defense
+        if degats>=0:
+            self.recevoir_degats(degats,cible)
+     
+        else:
+            n=cible.defause-degats
+            if n<0: 
+                cible.recevoir_degats(n)
+            else  :
+                cible.defuse-=n
+
+ 
 
 
 
-    def recevoir_degats(self, degats):
+
+    def recevoir_degats(self, degats,cible):
         """Réduire les points de vie en fonction des dégâts subis."""
-        self.health -= degats
-        if self.health < 0:
-            self.health = 0
+        cible.health -= degats
+        if cible.health < 0:
+            self.remove(cible)
 
     def utiliser_competence(self, index, cible):
         """Utiliser une compétence sur une cible."""
@@ -237,33 +246,52 @@ class Competence:
 
     def appliquer(self, cible):
         """Appliquer un effet à une cible."""
-        self.effet(cible)
+        degats = self.effet - cible.defense
+        if degats>=0:
+            cible.recevoir_degats(degats)
+        else:
+            n=cible.defause-degats
+            if n<0: 
+                cible.recevoir_degats(n)
+            else  :
+                cible.defuse-=n
 
 
-def soin_effet(cible):
-    cible.health += 20
-    if cible.health > 100:  # Supposons que 100 est le maximum
-        cible.health = 100
+
+    def soin_effet(cible):
+        cible.health += 20
+        if cible.health > 100:  # Supposons que 100 est le maximum
+            cible.health = 100
 
 
-def attaque_puissante_effet(cible):
-    degats = 50
-    cible.recevoir_degats(degats)
+    def attaque_puissante_effet(l,cible):
+        degats = 50 - cible.defense
+        if degats>=0:
+            l.recevoir_degats(degats,cible)
+        else:
+            n=cible.defause-degats
+            if n<0: 
+                l.recevoir_degats(n,cible)
+            else  :
+                cible.defuse-=n
 
-def feu_effet(caster, target, terrain):
-    """Inflige des dégâts de zone autour de la cible."""
-    damage = 30  # Dégâts de base
-    x, y = target.x, target.y  # Position de la cible
-    zone = [
-        (x-1, y), (x+1, y), (x, y-1), (x, y+1),  # Cases adjacentes
-        (x-1, y-1), (x-1, y+1), (x+1, y-1), (x+1, y+1)  # Diagonales
-    ]
+ 
 
-    for u in caster.game.player_units + caster.game.enemy_units:
-        if (u.x, u.y) in zone:  # Vérifie si une unité est dans la zone
-            u.health -= damage
-            if u.health <= 0:
-                u.is_alive = False  # Gère la mort de l'unité
+
+    def feu_effet(caster, target, terrain):
+        """Inflige des dégâts de zone autour de la cible."""
+        damage = 30  # Dégâts de base
+        x, y = target.x, target.y  # Position de la cible
+        zone = [
+            (x-1, y), (x+1, y), (x, y-1), (x, y+1),  # Cases adjacentes
+            (x-1, y-1), (x-1, y+1), (x+1, y-1), (x+1, y+1)  # Diagonales
+        ]
+
+        for u in caster.game.player_units + caster.game.enemy_units:
+            if (u.x, u.y) in zone:  # Vérifie si une unité est dans la zone
+                u.health -= damage
+                if u.health <= 0:
+                    u.is_alive = False  # Gère la mort de l'unité
 
 
 
