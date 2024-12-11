@@ -7,8 +7,9 @@ from main import *
 
 # Charger les images (icônes)
 
-icon_obstacle = pygame.image.load("image/obstacle2.png")
-icon_herbe = pygame.image.load("image/Herbe1.png")
+icon_obstacle = pygame.image.load("image/obstacle.jpg")
+# icon_obstacle = pygame.image.load("image/ob.webp")
+icon_herbe = pygame.image.load("image/Herbe.png")
 icon_desert = pygame.image.load("image/carte.png")
 icon_health = pygame.image.load("image/health.png")
 
@@ -104,21 +105,27 @@ class Terrain:
         self.obstacles= liste_obstacles
     
 
-    def melanger(self) :
-        """fonction qui change l'emplacement des herbes apres chaque tour"""
+    def melanger(self):
+        """Change l'emplacement des herbes après chaque tour."""
         nouvelle_liste = []
-        #Suppression des herbes 
-        for i in self.herbes :
+
+        # Suppression des anciennes herbes
+        for i in self.herbes:
             self.cases[i[0]][i[1]] = Case(0, i[0], i[1])
-        
+
         for x in range(self.largeur):
             for y in range(self.hauteur):
-                if [x,y] in self.obstacles + self.health :
+                # Ignorer les cases d'obstacles ou de santé
+                if [x, y] in self.obstacles + self.health:
                     continue
-                elif random.random() < 0.05 : 
+                # Générer une nouvelle herbe avec une probabilité de 5%
+                if random.random() < 0.05:
                     self.cases[x][y] = Case(2, x, y)
-                    nouvelle_liste.append([x,y])
+                    nouvelle_liste.append([x, y])
+
         self.herbes = nouvelle_liste
+        print(f"Les herbes ont été mélangées. Nouvelle liste : {self.herbes}")
+
 
 
     def afficher_grille(self, screen):

@@ -4,6 +4,7 @@ import random
 from game import *
 from main import *
 from Feu import *
+from IA import *
 
 # Constantes
 GRID_SIZE = 8
@@ -54,14 +55,15 @@ class Unit:
 
 
 class Type_Unite(Unit):
-    def __init__(self, nom, x, y, vie, attaque, equipe, defense, deplacement_distance, competences, arme=None, image_id=None):
+    def __init__(self, nom, x, y, vie, attaque, equipe, defense, deplacement_distance, competences, arme=None, image_id=None ,range=1):
         super().__init__(x, y, vie, attaque, equipe, arme)
         self.nom = nom
         self.defense = defense
+        self.attaque = attaque
         self.deplacement_distance = deplacement_distance
         self.competences = competences
         self.image = pygame.image.load(f'image/p{image_id}.jpg')
-
+        self.range = range
         # Redimensionner l'image
         scale_factor = 0.9
         new_size = (int(CELL_SIZE * scale_factor), int(CELL_SIZE * scale_factor))
@@ -78,25 +80,29 @@ class Type_Unite(Unit):
         # Calculer la nouvelle position
         new_x = self.x + dx
         new_y = self.y + dy
-        
+
         # Vérifier si la position est valide
-        if 0 <= new_x < NUM_COLUMNS and 0 <= new_y < NUM_ROWS-1: #-1 pour enlever la ligne du tableau en bas
+        if 0 <= new_x < NUM_COLUMNS and 0 <= new_y < NUM_ROWS - 1:  # -1 pour éviter la ligne du tableau
             target_case = terrain.cases[new_x][new_y]
 
             # Si la case est un obstacle, l'unité ne peut pas avancer
             if target_case.type_case == 1:
+                print(f"L'unité {self.nom} ne peut pas avancer : obstacle détecté.")
                 return False
-            elif target_case.type_case == 2 :
-                self.vie -= 10 #on perd 10 points de santé si on passe par l'herbe 
-            elif target_case.type_case == 3 : 
-                self.vie += (100-self.vie)
-            
-            # Si tout est valide, on déplace l'unité d'une case
+            elif target_case.type_case == 2:  # Herbe
+                print(f"L'unité {self.nom} traverse une case d'herbe et perd 10 points de vie.")
+                self.vie -= 10
+            elif target_case.type_case == 3:  # Santé
+                print(f"L'unité {self.nom} récupère sa vie en passant sur une case de santé.")
+                self.vie = min(100, self.vie + 100 - self.vie)
+
+            # Déplacer l'unité si tout est valide
             self.x = new_x
             self.y = new_y
             return True
-        else:
-            return False  # Si la case cible est en dehors des limites
+
+        print(f"L'unité {self.nom} ne peut pas se déplacer en dehors des limites.")
+        return False  # Si la case cible est en dehors des limites
 
     
 

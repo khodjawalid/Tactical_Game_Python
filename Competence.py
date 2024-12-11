@@ -25,7 +25,7 @@ def poison_effet(cible):
 
 def glace_eclatante_effet(cible):
     """Immobilise la cible pendant 2 tours et inflige 20 points de dégâts."""
-    cible.health -= 20  # Inflige des dégâts
+    cible.vie -= 20  # Inflige des dégâts
     cible.est_glace = True  # Ajoute un statut pour l'immobilisation
     cible.glace_duree = 2  # Immobilisation pendant 2 tours
     print(f"{cible.nom} est frappé par Glace Éclatante ! Dégâts : 20. Immobilisé pour 2 tours.")

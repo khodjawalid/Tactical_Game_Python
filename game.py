@@ -4,6 +4,7 @@ from unit import *
 from main import *
 from Feu import *
 from Competence import *
+from IA import *
 
 
 #Bibliothèque pour lire et afficher un gif derrière le menu démarrage 
@@ -37,6 +38,8 @@ class Game:
         self.player_units = []  
         self.enemy_units = [] 
         self.units_with_active_skills = []
+        self.enemy_ai = EnemyAI(self)
+        self.mode = "solo"
   
         
 
@@ -54,17 +57,17 @@ class Game:
 
         # Initialisation des unités des joueurs
         self.player_units = [
-            Type_Unite("Alex", 0, 0,  100, 30, "player", 10, 1, [competence_soin],epee ,"0"),
-            Type_Unite("Clara", 0, 1, 100, 25, "player", 15, 2, [competence_bouclier],arc,"1"),
-            Type_Unite("Maxime", 0, 2, 100, 35, "player", 10, 3, [competence_poison],lance ,"2"),
-            Type_Unite("Sophie", 0, 3, 100, 20, "player", 20, 4, [competence_glace], bombe ,"3"),
+            Type_Unite("Alex", 0, 0,  100, 30, "player", 10, 1, [competence_soin],epee ,"0",1),
+            Type_Unite("Clara", 0, 1, 100, 25, "player", 15, 2, [competence_bouclier],arc,"1",2),
+            Type_Unite("Maxime", 0, 2, 100, 35, "player", 10, 3, [competence_poison],lance ,"2",3),
+            Type_Unite("Sophie", 0, 3, 100, 20, "player", 20, 4, [competence_glace], bombe ,"3",1),
         ]
 
         self.enemy_units = [
-            Type_Unite("Alex", 0, 5, 100, 30, "enemy", 10, 1, [competence_soin], epee ,"0"),
-            Type_Unite("Clara", 0, 6, 100, 25, "enemy", 15, 2, [competence_bouclier], arc , "1"),
-            Type_Unite("Maxime", 0, 7, 100, 35, "enemy", 10, 3, [competence_poison],lance , "2"),
-            Type_Unite("Sophie", 0, 8, 100, 20, "enemy", 20, 4, [competence_poison], arc, "3"),
+            Type_Unite("Alex", 0, 5, 100, 30, "enemy", 10, 1, [competence_soin], epee ,"0",1),
+            Type_Unite("Clara", 0, 6, 100, 25, "enemy", 15, 2, [competence_bouclier], arc , "1",2),
+            Type_Unite("Maxime", 0, 7, 100, 35, "enemy", 10, 3, [competence_poison],lance , "2",3),
+            Type_Unite("Sophie", 0, 8, 100, 20, "enemy", 20, 4, [competence_poison], arc, "3",1),
         ]
 
         for unit in self.player_units + self.enemy_units:
@@ -195,6 +198,7 @@ class Game:
                         if event.key == pygame.K_SPACE:
                             for enemy in self.enemy_units:
                                 if abs(selected_unit.x - enemy.x) <= selected_unit.deplacement_distance and abs(selected_unit.y - enemy.y) <= selected_unit.deplacement_distance:
+                                    self.play_attack_sound()
                                     if selected_unit.arme.nom == "Bombe":
                                     # Utiliser l'effet de la bombe
                                         bombe_effet(
@@ -209,7 +213,7 @@ class Game:
                                     message = f"{selected_unit.nom} utilise {selected_unit.arme.nom} sur {enemy.nom}!"
                                     self.ajouter_message(message)
                                     if enemy.vie <= 0:
-                                        self.enemy_units.remove(enemy)
+                                        self.remove(enemy)
                                         self.ajouter_message(f"{enemy.nom} est éliminé!")
                                         print(enemy.nom, 'est éliminé ')
                                         self.player_score += 1
@@ -230,11 +234,15 @@ class Game:
 
             selected_unit.is_selected = False  # Désélectionner l'unité
             self.tour += 1  # Passer au tour suivant
-
-
+        self.update_skill_effects()
+        result = self.check_end_game()
+        if result == "menu":
+            return result
 
     def handle_enemy_turn(self):
         # Tour de l'ennemi : choisir une unité parmi les ennemis
+    
+
         for selected_unit in self.enemy_units:
             has_acted = False
             selected_unit.is_selected = True
@@ -295,36 +303,122 @@ class Game:
                             for player in self.player_units:
                                 # Vérifie si le joueur est adjacent à l'ennemi
                                 if abs(selected_unit.x - player.x) <= selected_unit.deplacement_distance and abs(selected_unit.y - player.y) <= selected_unit.deplacement_distance: 
-                                    # Effectue l'attaque
-                                    selected_unit.attaquer_avec_arme(player, self.terrain)
                                     
-                                    # Si la vie du joueur tombe à 0, il est retiré
+                                    # Effectue l'attaque
+                                    self.play_attack_sound()
+                                    if selected_unit.arme.nom == "Bombe":
+                                    # Utiliser l'effet de la bombe
+                                        bombe_effet(
+                                            utilisateur=selected_unit,
+                                            cible=player,
+                                            terrain=self.terrain,
+                                            game_instance=self
+                                        )
+                                    else:
+                                        selected_unit.attaquer_avec_arme(player, self.terrain)
+                                    message = f"{selected_unit.nom} utilise {selected_unit.arme.nom} sur {player.nom}!"
+                                    self.ajouter_message(message)
                                     if player.vie <= 0:
-                                        self.player_units.remove(player)
+                                        self.remove(player)
+                                        self.ajouter_message(f"{player.nom} est éliminé!")
+                                        print(player.nom, 'est éliminé ')
                                         self.enemy_score += 1
-                                        print(f"{player.nom} est éliminé")
                                     has_acted = True  # Fin du tour pour cette unité
-
+                        competence_used = False
+                        if event.key == pygame.K_c and not competence_used:
+                            if selected_unit.competences:
+                                print(f"Compétences disponibles : {[c.nom for c in selected_unit.competences]}")
+                                # Utiliser la première compétence par défaut (ou une logique pour choisir)
+                                competence = selected_unit.competences[0]
+                                competence.appliquer(selected_unit)  # Applique la compétence sur l'unité elle-même
+                                self.ajouter_message(f"{selected_unit.nom} utilise la compétence {competence.nom}!")
+                                self.draw_skill_icon(selected_unit)
+                                self.units_with_active_skills.append((selected_unit, pygame.time.get_ticks()))
+                                competence_used = True  # Empêche une autre utilisation de compétence ce tour
+                            else:
+                                print(f"{selected_unit.nom} n'a pas de compétence disponible.")
+                        
             selected_unit.is_selected = False  # Désélectionner l'unité
             self.tour += 1  # Passer au tour suivant
+        self.update_skill_effects()
+        result = self.check_end_game()
+        if result == "menu":
+            return result
 
 
-    
+    def remove(self, unit):
+        """
+        Supprime une unité de la liste correspondante (player_units ou enemy_units) si elle existe.
 
-    # def get_nearest_player(self, unit):
-    #     """Retourne l'unité du joueur la plus proche."""
-    #     nearest_player = self.player_units[0]
-    #     min_distance = float('inf')
+        Args:
+            unit: L'unité à supprimer (doit être dans player_units ou enemy_units).
+        """
+        if unit in self.player_units:
+            self.player_units.remove(unit)
+            print(f"L'unité {unit.nom} a été supprimée de la liste des joueurs.")
+        elif unit in self.enemy_units:
+            self.enemy_units.remove(unit)
+            print(f"L'unité {unit.nom} a été supprimée de la liste des ennemis.")
+        else:
+            print(f"L'unité {unit.nom} n'a pas été trouvée dans les listes.")
 
-    #     for player in self.player_units:
-    #         distance = abs(unit.x - player.x) + abs(unit.y - player.y)
-    #         if distance < min_distance:
-    #             min_distance = distance
-    #             nearest_player = player
 
-    #     return nearest_player
+    def check_end_game(self):
+        """
+        Vérifie si toutes les unités d'un camp sont mortes, affiche un écran de fin,
+        et retourne au menu principal si la partie est terminée.
+        """
+        # Vérifier si toutes les unités du joueur sont mortes
+        if len(self.player_units) == 0:
+            self.show_end_screen("Défaite : Tous vos joueurs sont éliminés.")
+            return "menu"
 
+        # Vérifier si toutes les unités ennemies sont mortes
+        elif len(self.enemy_units) == 0:
+            self.show_end_screen("Victoire : Tous les ennemis sont éliminés.")
+            return "menu"
 
+        # Continuer le jeu si aucune condition de fin n'est remplie
+        return None
+    def show_end_screen(self, message):
+        """
+        Affiche un écran de fin de partie avec un message, un résumé des scores, 
+        et attend que le joueur appuie sur une touche pour retourner au menu principal.
+        
+        Args:
+            message (str): Le message à afficher (victoire ou défaite).
+        """
+        font = pygame.font.Font(None, 74)
+        small_font = pygame.font.Font(None, 36)
+        self.screen.fill((222, 180, 200))  # Fond noir
+
+        # Afficher le message principal (victoire ou défaite)
+        text = font.render(message, True, (255, 255, 255))
+        self.screen.blit(text, ((WIDTH - text.get_width()) // 2, HEIGHT // 2 - 150))
+
+        # Afficher le résumé des scores
+        score_text = small_font.render(f"Score Joueur : {self.player_score}", True, (200, 200, 200))
+        enemy_text = small_font.render(f"Score Ennemi : {self.enemy_score}", True, (200, 200, 200))
+        tour_text = small_font.render(f"Nombre de tours : {self.tour}", True, (200, 200, 200))
+
+        self.screen.blit(score_text, ((WIDTH - score_text.get_width()) // 2, HEIGHT // 2 - 50))
+        self.screen.blit(enemy_text, ((WIDTH - enemy_text.get_width()) // 2, HEIGHT // 2))
+        self.screen.blit(tour_text, ((WIDTH - tour_text.get_width()) // 2, HEIGHT // 2 + 50))
+
+        # Ajouter un message pour retourner au menu
+        subtext = small_font.render("Appuyez sur une touche pour revenir au menu principal", True, (150, 150, 150))
+        self.screen.blit(subtext, ((WIDTH - subtext.get_width()) // 2, HEIGHT // 2 + 150))
+
+        pygame.display.flip()
+
+        # Attendre que le joueur appuie sur une touche
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.KEYDOWN:
+                    return
 
 
 
@@ -349,18 +443,27 @@ class Game:
 
                if unit in [u[0] for u in self.units_with_active_skills]:
                     self.draw_skill_icon(unit)
+        self.update_skill_effects()
 
         # Dessiner le tableau d'affichage
         self.afficher_tableau()
 
         pygame.display.flip()
 
- 
+    def play_attack_sound(self):
+        """
+        Joue un son général pour une attaque.
+        """
+       
+        sound = pygame.mixer.Sound("attack_sound.wav")  # Chemin du fichier sonore
+        sound.play()
+        
+
 
     def afficher_tableau(self):
         """Affiche le tableau d'affichage des scores et les messages."""
         font = pygame.font.Font(None, 36)
-        tableau_rect = pygame.Rect(0, HEIGHT - TABLEAU_HEIGHT * 2, WIDTH, TABLEAU_HEIGHT * 2)
+        tableau_rect = pygame.Rect(0, HEIGHT - TABLEAU_HEIGHT * 2, WIDTH, TABLEAU_HEIGHT * 3)
         SAND_COLOR = (194, 178, 128)
 
         # Dessiner le fond du tableau
@@ -375,7 +478,7 @@ class Game:
         text_width = score_text.get_width()
         text_height = score_text.get_height()
         text_x = (WIDTH - text_width) // 2
-        text_y = HEIGHT - TABLEAU_HEIGHT * 2 + 10  # Espace au-dessus des messages
+        text_y = HEIGHT - TABLEAU_HEIGHT * 2   # Espace au-dessus des messages
         
         message_fond = pygame.font.Font(None, 24)
         self.screen.blit(score_text, (text_x, text_y))
@@ -457,7 +560,7 @@ def select_player(screen, title, units):
     small_font = pygame.font.Font(None, 36)
 
     # Charger l'image en arrière-plan
-    background_image_path = "image/menu2.jpg"  # Chemin vers ton image
+    background_image_path = "image/menu12.jpg"  # Chemin vers ton image
     background_image = pygame.image.load(background_image_path)
     background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))  # Redimensionner à la taille de l'écran
 
@@ -535,7 +638,7 @@ def play_gif_background(gif_path, screen):
 def splash_screen(screen):
     """Affiche un écran de démarrage avec une image de fond et attend une touche."""
    
-    splash_image = pygame.image.load("image/menu12.jpg")  
+    splash_image = pygame.image.load("image/menu123.jpg")  
     splash_image = pygame.transform.scale(splash_image, (WIDTH, HEIGHT + + TABLEAU_HEIGHT))
     
  
@@ -669,44 +772,75 @@ def main():
 
     while True:
         action = menu(screen)
+
         if action == "Solo":
-            game = Game(screen)  # Utilise Affichage ici
+            game = Game(screen)  # Initialisation du jeu pour le mode solo
             selected_player = select_player(screen, "Select Your Player", game.player_units)
             selected_enemy = select_player(screen, "Select Enemy Player", game.enemy_units)
-            # Vérifie les collisions après chaque tour
-             # à vérifier ! 
 
+            # Configurer les unités du joueur et de l'ennemi
             game.player_units = [selected_player]
             game.enemy_units = [selected_enemy]
+
+            is_player_turn = True  # Variable pour alterner les tours
 
             while True:
                 # Affiche le jeu et le tableau à chaque tour
                 game.flip_display()
 
-                # Tour du joueur
-                game.handle_player_turn()
-
-                # Vérifie si le jeu continue ou si le joueur a choisi de revenir au menu
-                if game.tour  % 2 == 0:  # Si c'est un tour impair, c'est à l'IA de jouer
-                    game.handle_player_turn()
-                else :  # Si c'est un tour pair, c'est au joueur de jouer
+                if is_player_turn:  # Tour du joueur
                     result = game.handle_player_turn()
                     if result == "menu":
-                        break
-                    if game.tour %8 == 0 :
-                        game.terrain.melanger()
-        elif action == "Multiplayers":
-            game = Game(screen)  # Utilise Affichage ici
-            game.flip_display()  # Affiche le terrain et les unités
-            while True:
-                # L'IA et le joueur alternent les tours
-                result = game.handle_player_turn()  # Le joueur joue son tour
+                        break  # Retourner au menu principal si demandé
+                    is_player_turn = False  # Passer au tour de l'ennemi
+                else:  # Tour de l'ennemi
+                    result = game.enemy_ai.play_turn()
+                    if not result:  # Si aucun tour n'a été joué, afficher un message pour le débogage
+                        print("L'ennemi n'a pas pu effectuer d'action.")
+                    is_player_turn = True  # Passer au tour du joueur
+
+                # Vérification des conditions de victoire ou de défaite
+                result = game.check_end_game()
                 if result == "menu":
                     break
-                game.handle_enemy_turn()  # L'IA joue après
- 
+
+                # Mélanger le terrain tous les 8 tours
+                if game.tour % 8 == 0:
+                    game.terrain.melanger()
+
+                # Incrémenter les tours pour affichage
+                game.tour += 1
+
+
+        elif action == "Multiplayers":
+            game = Game(screen)  # Initialisation du jeu pour le mode multijoueur
+            game.flip_display()  # Affiche le terrain et les unités
+
+            while True:
+                # Tour des 4 unités du joueur
+                for i, player_unit in enumerate(game.player_units[:4]):  # Limiter à 4 unités
+                    print(f"Tour du joueur : Unité {player_unit.nom}")
+                    result = game.handle_player_turn()  # Gérer le tour de l'unité actuelle
+                    if result == "menu":
+                        break  # Retour au menu
+
+                # Vérification des conditions de victoire après les actions des unités du joueur
+                result = game.check_end_game()
+                if result == "menu":
+                    break
+
+                # Tour des 4 unités ennemies
+                for j, enemy_unit in enumerate(game.enemy_units[:4]):  # Limiter à 4 unités
+                    print(f"Tour de l'ennemi : Unité {enemy_unit.nom}")
+                    result = game.handle_enemy_turn()  # Gérer le tour de l'unité actuelle ennemie
+                    if result == "menu":
+                        break  # Retour au menu
+
+                # Vérification des conditions de victoire après les actions des unités ennemies
+                result = game.check_end_game()
+                if result == "menu":
+                    break
+
 
 if __name__ == "__main__":
     main()
-   
-
