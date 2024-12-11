@@ -7,14 +7,20 @@ from main import *
 
 # Charger les images (icônes)
 
-icon_obstacle = pygame.image.load("image/obstacle.jpg")
-icon_herbe = pygame.image.load("image/Herbe.jpg")
+icon_obstacle = pygame.image.load("image/obstacle2.png")
+icon_herbe = pygame.image.load("image/Herbe1.png")
+icon_desert = pygame.image.load("image/carte.png")
+icon_health = pygame.image.load("image/health.png")
 
+NUM_COLUMNS = 37
+NUM_ROWS = 37
 
 CELL_SIZE = 40
 
 icon_obstacle = pygame.transform.scale(icon_obstacle, (CELL_SIZE, CELL_SIZE))
 icon_herbe = pygame.transform.scale(icon_herbe, (CELL_SIZE, CELL_SIZE))
+icon_desert = pygame.transform.scale(icon_desert, (CELL_SIZE, CELL_SIZE))
+icon_health = pygame.transform.scale(icon_health, (CELL_SIZE, CELL_SIZE))
 class Case:
     def __init__(self, type_case, x, y, effet=None):
         self.type_case = type_case
@@ -30,8 +36,10 @@ class Case:
             screen.blit(icon_obstacle, position)
         elif self.type_case == 2 :
             screen.blit(icon_herbe, position)
-        else :
-            pass
+        elif self.type_case == 3 :
+            screen.blit(icon_health, position)
+        
+            # screen.blit(icon_desert, position)
 
 
 class Terrain:
@@ -39,6 +47,9 @@ class Terrain:
         self.largeur = largeur  # Largeur de la grille
         self.hauteur = hauteur  # Hauteur de la grille
         self.cases = []  # Initialisation de la liste des cases
+        self.obstacles = [] 
+        self.herbes = [] 
+        self.health = []
 
     def generer_grille(self):
 
@@ -68,7 +79,8 @@ class Terrain:
         #centre 
         [19,6], [18,6], [19,7], [18,7],
         ]
-
+        
+        liste_interdite = [[0,i] for i in range(NUM_ROWS)]+[[NUM_COLUMNS-1 , j] for j in range(NUM_ROWS)]
         for x in range(self.largeur):
             ligne = []
             for y in range(self.hauteur):
@@ -76,16 +88,37 @@ class Terrain:
                 if [x,y] in liste_obstacles :
                     case_type = 1  # Obstacle
                  
-                elif random.random() < 0.05 : #Probabilité d'avoir du herbe de 5%
+                elif random.random() < 0.01: #Probabilité d'avoir du herbe de 5%
                     case_type = 2
-                else :  # Ajouter un peu de hasard
-                    case_type = 0  # Obstacle ponctuel
+                elif random.random() < 0.01 and [x,y] not in liste_interdite :
+                    case_type = 3  
+                    self.health.append([x,y])
+                else : 
+                    case_type = 0 
                 
 
                     # Créer une nouvelle case avec le type sélectionné
                 nouvelle_case = Case(case_type, x, y)
                 ligne.append(nouvelle_case)  # Ajout de la case à la ligne
             self.cases.append(ligne)
+        self.obstacles= liste_obstacles
+    
+
+    def melanger(self) :
+        """fonction qui change l'emplacement des herbes apres chaque tour"""
+        nouvelle_liste = []
+        #Suppression des herbes 
+        for i in self.herbes :
+            self.cases[i[0]][i[1]] = Case(0, i[0], i[1])
+        
+        for x in range(self.largeur):
+            for y in range(self.hauteur):
+                if [x,y] in self.obstacles + self.health :
+                    continue
+                elif random.random() < 0.05 : 
+                    self.cases[x][y] = Case(2, x, y)
+                    nouvelle_liste.append([x,y])
+        self.herbes = nouvelle_liste
 
 
     def afficher_grille(self, screen):

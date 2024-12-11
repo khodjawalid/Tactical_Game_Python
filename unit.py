@@ -72,36 +72,7 @@ class Type_Unite(Unit):
         super().attack(cible, terrain)  # Appel de la méthode `attack` de `Unit`
 
 
-    # def move(self, dx, dy, terrain):
-    #     """Déplace l'unité d'une case en fonction de sa capacité de déplacement."""
-    #     new_x = self.x + dx
-    #     new_y = self.y + dy
-
-    #     print(f"Tentative de déplacement : ({self.x}, {self.y}) -> ({new_x}, {new_y})")
-
-    #     # Vérifier si la position cible est valide
-    #     if 0 <= new_y < 18 and 0 <= new_x < 37:
-    #         target_case = terrain.cases[new_y][new_x]
-    #         print(f"Type de la case cible : {target_case.type_case}")
-
-    #         if target_case.type_case == 'obstacle':
-    #             print("Déplacement bloqué par un obstacle")
-    #             return False
-
-    #         # if target_case.type_case in ['eau', 'feu']:
-    #         #     print("L'unité est morte (eau ou feu)")
-    #         #     self.vie = 0
-    #         #     pygame.quit()
-    #         #     exit()
-
-    #         # Déplacement valide
-    #         self.x = new_x
-    #         self.y = new_y
-    #         return True
-
-    #     print("Déplacement hors limites")
-    #     return False
-
+    
     def move(self, dx, dy, terrain):
         """Déplace l'unité d'une case en fonction de sa capacité de déplacement."""
         # Calculer la nouvelle position
@@ -117,6 +88,8 @@ class Type_Unite(Unit):
                 return False
             elif target_case.type_case == 2 :
                 self.vie -= 10 #on perd 10 points de santé si on passe par l'herbe 
+            elif target_case.type_case == 3 : 
+                self.vie += (100-self.vie)
             
             # Si tout est valide, on déplace l'unité d'une case
             self.x = new_x
@@ -171,41 +144,41 @@ class Type_Unite(Unit):
 
 
 
-class Competence:
-    def __init__(self, nom, description, effet):
-        self.nom = nom
-        self.description = description
-        self.effet = effet
+# class Competence:
+#     def __init__(self, nom, description, effet):
+#         self.nom = nom
+#         self.description = description
+#         self.effet = effet
 
-    def appliquer(self, cible):
-        """Appliquer un effet à une cible."""
-        self.effet(cible)
-
-
-def soin_effet(cible):
-    cible.vie += 20
-    if cible.vie > 100:  # Supposons que 100 est le maximum
-        cible.vie = 100
+#     def appliquer(self, cible):
+#         """Appliquer un effet à une cible."""
+#         self.effet(cible)
 
 
-def attaque_puissante_effet(cible):
-    degats = 50
-    cible.recevoir_degats(degats)
+# def soin_effet(cible):
+#     cible.vie += 20
+#     if cible.vie > 100:  # Supposons que 100 est le maximum
+#         cible.vie = 100
 
-def feu_effet(caster, target, terrain):
-    """Inflige des dégâts de zone autour de la cible."""
-    damage = 30  # Dégâts de base
-    x, y = target.x, target.y  # Position de la cible
-    zone = [
-        (x-1, y), (x+1, y), (x, y-1), (x, y+1),  # Cases adjacentes
-        (x-1, y-1), (x-1, y+1), (x+1, y-1), (x+1, y+1)  # Diagonales
-    ]
 
-    for u in caster.game.player_units + caster.game.enemy_units:
-        if (u.x, u.y) in zone:  # Vérifie si une unité est dans la zone
-            u.vie -= damage
-            if u.vie <= 0:
-                u.is_alive = False  # Gère la mort de l'unité
+# def attaque_puissante_effet(cible):
+#     degats = 50
+#     cible.recevoir_degats(degats)
+
+# def feu_effet(caster, target, terrain):
+#     """Inflige des dégâts de zone autour de la cible."""
+#     damage = 30  # Dégâts de base
+#     x, y = target.x, target.y  # Position de la cible
+#     zone = [
+#         (x-1, y), (x+1, y), (x, y-1), (x, y+1),  # Cases adjacentes
+#         (x-1, y-1), (x-1, y+1), (x+1, y-1), (x+1, y+1)  # Diagonales
+#     ]
+
+#     for u in caster.game.player_units + caster.game.enemy_units:
+#         if (u.x, u.y) in zone:  # Vérifie si une unité est dans la zone
+#             u.vie -= damage
+#             if u.vie <= 0:
+#                 u.is_alive = False  # Gère la mort de l'unité
 
 
 
