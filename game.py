@@ -83,7 +83,7 @@ class Game:
         current_time = pygame.time.get_ticks()
         self.units_with_active_skills = [
             (unit, start_time) for unit, start_time in self.units_with_active_skills
-            if current_time - start_time < 3000  # 3 secondes
+            if current_time - start_time < 30000  # 3 secondes
         ]
 
         # Dessiner les icônes pour les unités restantes
@@ -189,10 +189,19 @@ class Game:
                         # Valider le déplacement avec Entrée
                         if event.key == pygame.K_RETURN:
                             if (cursor_x, cursor_y) in accessible_cells:
-                                # Déplacer l'unité vers la case sélectionnée
-                                selected_unit.move(cursor_x, cursor_y, self.terrain)
-                                self.flip_display()
-                                has_acted = True  # Fin du tour pour cette unité
+                                dx = cursor_x - selected_unit.x
+                                dy = cursor_y - selected_unit.y
+                                if selected_unit.move(dx, dy, self.terrain):  # Appelle move avec les décalages
+                                    self.flip_display()  # Met à jour l'affichage après déplacement
+                                    has_acted = True
+                                else:
+                                    print(f"Déplacement vers ({cursor_x}, {cursor_y}) impossible.")
+
+                                # # Déplacer l'unité vers la case sélectionnée
+                                # selected_unit.move(cursor_x, cursor_y, self.terrain)
+                                # # selected_unit.x, selected_unit.y = cursor_x, cursor_y
+                                # self.flip_display()
+                                # has_acted = True  # Fin du tour pour cette unité
 
                         # Attaque avec la barre espace
                         if event.key == pygame.K_SPACE:
@@ -293,10 +302,14 @@ class Game:
                         # Valider le déplacement avec Entrée
                         if event.key == pygame.K_RETURN:
                             if (cursor_x, cursor_y) in accessible_cells:
-                                # Déplacer l'unité vers la case sélectionnée
-                                selected_unit.x, selected_unit.y = cursor_x, cursor_y
-                                self.flip_display()
-                                has_acted = True  # Fin du tour pour cette unité
+                                dx = cursor_x - selected_unit.x
+                                dy = cursor_y - selected_unit.y
+                                if selected_unit.move(dx, dy, self.terrain):  # Appelle move avec les décalages
+                                    self.flip_display()  # Met à jour l'affichage après déplacement
+                                    has_acted = True
+                                else:
+                                    print(f"Déplacement vers ({cursor_x}, {cursor_y}) impossible.")
+
 
                         # Attaque avec la barre espace
                         if event.key == pygame.K_SPACE:
@@ -390,7 +403,7 @@ class Game:
         """
         font = pygame.font.Font(None, 74)
         small_font = pygame.font.Font(None, 36)
-        self.screen.fill((222, 180, 200))  # Fond noir
+        self.screen.fill((0, 0, 0))  # Fond noir
 
         # Afficher le message principal (victoire ou défaite)
         text = font.render(message, True, (255, 255, 255))
@@ -439,7 +452,7 @@ class Game:
         for unit in self.player_units + self.enemy_units:
             if 0 <= unit.x < NUM_COLUMNS and 0 <= unit.y < NUM_ROWS:
                unit.draw(self.screen)
-               unit.update_health(self.screen)
+               unit.update_health(self.screen, self.terrain)
 
                if unit in [u[0] for u in self.units_with_active_skills]:
                     self.draw_skill_icon(unit)
@@ -509,12 +522,14 @@ class Game:
                     target_case = self.terrain.cases[target_x][target_y]  
 
                     # Vérifier que la case n'est pas un obstacle
-                    if target_case.type_case == 1 or any(u.x == target_x and u.y == target_y for u in self.player_units + self.enemy_units) :
-                        # print(f"Case ({target_x}, {target_y}) est un obstacle, ignorée.")
+                    if target_case.type_case == 1:  # Obstacle
                         continue  # Ignorer cette case
-
-                    # Vérifier qu'aucune unité ne se trouve sur la case
-                    else :
+                    elif target_case.type_case == 2:  # Herbe
+                        print(f"Case d'herbe détectée à ({target_x}, {target_y}). Accessible avec effet.")
+                        accessible_cells.append((target_x, target_y))
+                    elif target_case.type_case == 3:  # Santé
+                        accessible_cells.append((target_x, target_y))
+                    else:
                         accessible_cells.append((target_x, target_y))
 
         return accessible_cells
@@ -767,7 +782,7 @@ def main():
     pygame.display.set_caption("Mon jeu de stratégie")
     pygame.mixer.init()
     pygame.mixer.music.load("music.mp3")
-    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.set_volume(0)
     pygame.mixer.music.play(-1)
 
     while True:
@@ -817,29 +832,30 @@ def main():
             game.flip_display()  # Affiche le terrain et les unités
 
             while True:
-                # Tour des 4 unités du joueur
-                for i, player_unit in enumerate(game.player_units[:4]):  # Limiter à 4 unités
+                units = list(zip(game.player_units[:4], game.enemy_units[:4]))
+                for player_unit, enemy_unit in units:
+                    # Tour du joueur
                     print(f"Tour du joueur : Unité {player_unit.nom}")
-                    result = game.handle_player_turn()  # Gérer le tour de l'unité actuelle
+                    result = game.handle_player_turn()
                     if result == "menu":
                         break  # Retour au menu
+                    
+                    # Vérification des conditions de victoire
+                    result = game.check_end_game()
+                    if result == "menu":
+                        break
 
-                # Vérification des conditions de victoire après les actions des unités du joueur
-                result = game.check_end_game()
-                if result == "menu":
-                    break
-
-                # Tour des 4 unités ennemies
-                for j, enemy_unit in enumerate(game.enemy_units[:4]):  # Limiter à 4 unités
+                    # Tour de l'ennemi
                     print(f"Tour de l'ennemi : Unité {enemy_unit.nom}")
-                    result = game.handle_enemy_turn()  # Gérer le tour de l'unité actuelle ennemie
+                    result = game.handle_enemy_turn()
                     if result == "menu":
                         break  # Retour au menu
 
-                # Vérification des conditions de victoire après les actions des unités ennemies
-                result = game.check_end_game()
-                if result == "menu":
-                    break
+                    # Vérification des conditions de victoire
+                    result = game.check_end_game()
+                    if result == "menu":
+                        break
+
 
 
 if __name__ == "__main__":

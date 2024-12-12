@@ -12,6 +12,8 @@ icon_obstacle = pygame.image.load("image/obstacle.jpg")
 icon_herbe = pygame.image.load("image/Herbe.png")
 icon_desert = pygame.image.load("image/carte.png")
 icon_health = pygame.image.load("image/health.png")
+icon_protection = pygame.image.load("image/protection.webp")  # Ajoutez une icône pour la protection
+
 
 NUM_COLUMNS = 37
 NUM_ROWS = 37
@@ -22,6 +24,7 @@ icon_obstacle = pygame.transform.scale(icon_obstacle, (CELL_SIZE, CELL_SIZE))
 icon_herbe = pygame.transform.scale(icon_herbe, (CELL_SIZE, CELL_SIZE))
 icon_desert = pygame.transform.scale(icon_desert, (CELL_SIZE, CELL_SIZE))
 icon_health = pygame.transform.scale(icon_health, (CELL_SIZE, CELL_SIZE))
+icon_protection = pygame.transform.scale(icon_protection, (CELL_SIZE, CELL_SIZE))
 class Case:
     def __init__(self, type_case, x, y, effet=None):
         self.type_case = type_case
@@ -39,6 +42,8 @@ class Case:
             screen.blit(icon_herbe, position)
         elif self.type_case == 3 :
             screen.blit(icon_health, position)
+        elif self.type_case == 4:  # Protection
+            screen.blit(icon_protection, position)
         
             # screen.blit(icon_desert, position)
 
@@ -81,6 +86,7 @@ class Terrain:
         [19,6], [18,6], [19,7], [18,7],
         ]
         
+        liste_protection = [[2, 2], [10, 10], [15, 15], [20, 20]]
         liste_interdite = [[0,i] for i in range(NUM_ROWS)]+[[NUM_COLUMNS-1 , j] for j in range(NUM_ROWS)]
         for x in range(self.largeur):
             ligne = []
@@ -91,9 +97,11 @@ class Terrain:
                  
                 elif random.random() < 0.01: #Probabilité d'avoir du herbe de 5%
                     case_type = 2
-                elif random.random() < 0.01 and [x,y] not in liste_interdite :
+                elif random.random() < 0.01 and [x,y] not in liste_interdite  not in liste_protection :
                     case_type = 3  
                     self.health.append([x,y])
+                elif [x, y] in liste_protection:  # Ajout des cases fixes de protection
+                    case_type = 4
                 else : 
                     case_type = 0 
                 

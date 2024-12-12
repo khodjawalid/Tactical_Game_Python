@@ -23,17 +23,17 @@ class Arme:
 def epee_effet(utilisateur, cible, terrain=None):
     """Effet de l'épée : inflige des dégâts directs."""
     print(f"{utilisateur.nom} utilise une ÉPÉE sur {cible.nom}!")
-    cible.recevoir_degats(30)
+    cible.recevoir_degats(30, terrain)
 
 def arc_effet(utilisateur, cible, terrain=None):
     """Effet de l'arc : inflige des dégâts à distance."""
     print(f"{utilisateur.nom} utilise un ARC sur {cible.nom}!")  # Portée de 3 cases
-    cible.recevoir_degats(20)
+    cible.recevoir_degats(20 , terrain)
 
 def lance_effet(utilisateur, cible, terrain=None):
     """Effet de la lance : inflige des dégâts à la cible et la repousse."""
     print(f"{utilisateur.nom} utilise une LANCE sur {cible.nom}!")
-    cible.recevoir_degats(25)
+    cible.recevoir_degats(25 , terrain)
     # Repousser la cible d'une case si possible
     dx = cible.x - utilisateur.x
     dy = cible.y - utilisateur.y
@@ -64,7 +64,7 @@ def bombe_effet(utilisateur, cible, terrain=None, game_instance=None):
     for u in toutes_unites:
         if (u.x, u.y) in zone:
             print(f"{u.nom} est dans la zone d'effet de la bombe !")
-            u.recevoir_degats(40)
+            u.recevoir_degats(40, terrain)
 
 # Exemple d'utilisation
 

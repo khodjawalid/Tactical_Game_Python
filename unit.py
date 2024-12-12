@@ -44,12 +44,18 @@ class Unit:
             if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
                 target.recevoir_degats(self.attack_power)
 
-    def recevoir_degats(self, degats):
-        """Réduit les points de vie de l'unité en fonction des dégâts."""
+    def recevoir_degats(self, degats, terrain):
+        """Réduit les points de vie de l'unité en fonction des dégâts, sauf si elle est sur une case de protection."""
+        current_case = terrain.cases[self.x][self.y]
+        if current_case.type_case == 4:  # Case de protection
+            print(f"{self.nom} est sur une case de protection. Aucun dégât reçu.")
+            return  # Aucun changement de vie
+
+        # Réduction normale des points de vie
         self.vie -= degats
         if self.vie < 0:
             self.vie = 0
-        print(f"L'unité {self.equipe} reçoit {degats} dégâts. Vie restante : {self.vie}.")
+        print(f"L'unité {self.nom} reçoit {degats} dégâts. Vie restante : {self.vie}.")
 
 
 
@@ -82,7 +88,7 @@ class Type_Unite(Unit):
         new_y = self.y + dy
 
         # Vérifier si la position est valide
-        if 0 <= new_x < NUM_COLUMNS and 0 <= new_y < NUM_ROWS - 1:  # -1 pour éviter la ligne du tableau
+        if 0 <= new_x < NUM_COLUMNS and 0 <= new_y < NUM_ROWS - 1:
             target_case = terrain.cases[new_x][new_y]
 
             # Si la case est un obstacle, l'unité ne peut pas avancer
@@ -93,28 +99,32 @@ class Type_Unite(Unit):
                 print(f"L'unité {self.nom} traverse une case d'herbe et perd 10 points de vie.")
                 self.vie -= 10
             elif target_case.type_case == 3:  # Santé
-                print(f"L'unité {self.nom} récupère sa vie en passant sur une case de santé.")
-                self.vie = min(100, self.vie + 100 - self.vie)
+                print(f"L'unité {self.nom} récupère de la vie en passant sur une case de santé.")
+                self.vie = min(100, self.vie + 20)  # Augmente la vie (par exemple, +20)
+                # Supprimer le cœur
+                target_case.type_case = 0
+                terrain.health.remove([new_x, new_y])  # Mise à jour de la liste des cœurs
 
-            # Déplacer l'unité si tout est valide
+            # Déplacer l'unité
             self.x = new_x
             self.y = new_y
             return True
 
         print(f"L'unité {self.nom} ne peut pas se déplacer en dehors des limites.")
-        return False  # Si la case cible est en dehors des limites
-
-    
+        return False
 
         
 
-    def update_health(self, surface):
+    def update_health(self, surface, terrain):
         bar_width = 40
         bar_height = 4
-        bar_position = (self.x * CELL_SIZE, self.y * CELL_SIZE , bar_width, bar_height)
+        bar_position = (self.x * CELL_SIZE, self.y * CELL_SIZE, bar_width, bar_height)
         health_width = bar_width * (self.vie / 100)
 
-        if self.equipe == "player":
+        # Couleur de la barre de vie
+        if terrain.cases[self.x][self.y].type_case == 4:  # Sur une case de protection
+            bar_color = (0, 255, 255)  # Cyan pour indiquer la protection
+        elif self.equipe == "player":
             bar_color = (0, 255, 0)  # Vert pour le joueur
         else:
             bar_color = (255, 0, 0)  # Rouge pour l'ennemi
@@ -147,45 +157,5 @@ class Type_Unite(Unit):
         return (f"Unité({self.nom}, {self.x}, {self.y}, Vie: {self.vie}, Attaque: {self.attaque}, "
                 f"Défense: {self.defense}, Vitesse: {self.deplacement_distance}, "
                 f"Compétences: {competences_str})")
-
-
-
-# class Competence:
-#     def __init__(self, nom, description, effet):
-#         self.nom = nom
-#         self.description = description
-#         self.effet = effet
-
-#     def appliquer(self, cible):
-#         """Appliquer un effet à une cible."""
-#         self.effet(cible)
-
-
-# def soin_effet(cible):
-#     cible.vie += 20
-#     if cible.vie > 100:  # Supposons que 100 est le maximum
-#         cible.vie = 100
-
-
-# def attaque_puissante_effet(cible):
-#     degats = 50
-#     cible.recevoir_degats(degats)
-
-# def feu_effet(caster, target, terrain):
-#     """Inflige des dégâts de zone autour de la cible."""
-#     damage = 30  # Dégâts de base
-#     x, y = target.x, target.y  # Position de la cible
-#     zone = [
-#         (x-1, y), (x+1, y), (x, y-1), (x, y+1),  # Cases adjacentes
-#         (x-1, y-1), (x-1, y+1), (x+1, y-1), (x+1, y+1)  # Diagonales
-#     ]
-
-#     for u in caster.game.player_units + caster.game.enemy_units:
-#         if (u.x, u.y) in zone:  # Vérifie si une unité est dans la zone
-#             u.vie -= damage
-#             if u.vie <= 0:
-#                 u.is_alive = False  # Gère la mort de l'unité
-
-
 
 
