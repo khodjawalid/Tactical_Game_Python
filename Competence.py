@@ -10,30 +10,29 @@ class Competence:
         """Appliquer un effet à une cible."""
         self.effet(cible)
 
+def bouclier_effet(cible):
+    cible.reduction_degats = 0.5  # Réduction de 50 % des dégâts
+    cible.duree_bouclier = 1  # Bouclier actif pour 1 tour
+    print(f"{cible.nom} active un bouclier protecteur (50% de réduction des dégâts).")
+
+
+# Effet : Poison
+def poison_effet(cible):
+    cible.est_poisonne = True
+    cible.poison_duree = 3  # Effet du poison pendant 3 tours
+    cible.poison_degat_par_tour = 10
+    print(f"{cible.nom} est empoisonné ! Dégâts : 10 par tour pendant 3 tours.")
+
+def glace_eclatante_effet(cible):
+    """Immobilise la cible pendant 2 tours et inflige 20 points de dégâts."""
+    cible.vie -= 20  # Inflige des dégâts
+    cible.est_glace = True  # Ajoute un statut pour l'immobilisation
+    cible.glace_duree = 2  # Immobilisation pendant 2 tours
+    print(f"{cible.nom} est frappé par Glace Éclatante ! Dégâts : 20. Immobilisé pour 2 tours.")
+
 
 def soin_effet(cible):
-    cible.health += 20
-    if cible.health > 100:  # Supposons que 100 est le maximum
-        cible.health = 100
-
-
-def attaque_puissante_effet(cible):
-    degats = 50
-    cible.recevoir_degats(degats)
-
-def feu_effet(caster, target, terrain):
-    """Inflige des dégâts de zone autour de la cible."""
-    damage = 30  # Dégâts de base
-    x, y = target.x, target.y  # Position de la cible
-    zone = [
-        (x-1, y), (x+1, y), (x, y-1), (x, y+1),  # Cases adjacentes
-        (x-1, y-1), (x-1, y+1), (x+1, y-1), (x+1, y+1)  # Diagonales
-    ]
-
-    for u in caster.game.player_units + caster.game.enemy_units:
-        if (u.x, u.y) in zone:  # Vérifie si une unité est dans la zone
-            u.health -= damage
-            if u.health <= 0:
-                u.is_alive = False  # Gère la mort de l'unité
-
+    cible.vie += 20
+    if cible.vie > 100:  # Supposons que 100 est le maximum
+        cible.vie = 100
 
