@@ -1,3 +1,12 @@
+from game import *
+
+import pygame
+
+from game import *
+
+from Feu import *
+
+
 class EnemyAI:
     def __init__(self, game):
         self.game = game
@@ -5,70 +14,61 @@ class EnemyAI:
 
     def play_turn(self):
         """
-        Fait jouer un tour à une seule unité ennemie.
+        L'ennemi effectue une seule action par tour : attaquer ou se déplacer.
         """
         if not self.game.enemy_units:  # Si aucune unité ennemie n'est disponible
             return False  # Aucun tour joué
 
         # Récupérer l'unité ennemie qui doit jouer ce tour
         enemy = self.game.enemy_units[self.current_enemy_index]
+        has_acted = False
 
-        # Trouver les cases accessibles
+        # Affichage des cases accessibles
         accessible_cells = self.game.get_accessible_cells(enemy)
+        self.game.draw_accessible_cells(accessible_cells)
+        pygame.display.flip()  # Met à jour l'écran pour afficher les cases accessibles
 
-        # Zone de protection et régénération
-        for ally in self.game.enemy_units:
-            if ally != enemy:
-                distance = abs(enemy.x - ally.x) + abs(enemy.y - ally.y)
-                if distance <= 2:  # Zone de protection
-                    if enemy.vie < 0.5 * 100:
-                        enemy.vie += 10  # Régénérer
-                        return True
+        # Vérifier si une attaque est possible
+        for player in self.game.player_units:
+            if abs(enemy.x - player.x) <= enemy.deplacement_distance and abs(enemy.y - player.y) <= enemy.deplacement_distance:
+                # Lancer l'attaque
+                self.sound_manager.play_sound("attack")
+                self.attack_with_laser(enemy, player)
+                has_acted = True
+                break
 
-        # Gestion des compétences
-        if enemy.competences:
-            for competence in enemy.competences:
-                if competence.nom == "Soin" and enemy.vie < 0.3 * 100:
-                    competence.appliquer(enemy)  # Appliquer une compétence
-                    return True
-
-        # Trouver une cible prioritaire
-        priority_target = self.find_priority_target(enemy, self.game.player_units)
-        if priority_target:
-            self.attack(enemy, priority_target)
-            return True
-
-        # Trouver l'unité alliée la plus proche
-        closest_player_unit = self.find_closest_unit(enemy, self.game.player_units)
-
-        if closest_player_unit:
-            distance = abs(enemy.x - closest_player_unit.x) + abs(enemy.y - closest_player_unit.y)
-            if distance <= enemy.range and enemy.vie > 30:
-                self.attack(enemy, closest_player_unit)
-            elif enemy.vie < 30:
-                self.move_away(enemy, closest_player_unit, accessible_cells)
-            else:
-                self.move_towards(enemy, closest_player_unit, accessible_cells)
+        # Si aucune attaque n'a été effectuée, essayer de se déplacer
+        if not has_acted:
+            target = self.find_closest_unit(enemy, self.game.player_units)
+            if target:
+                self.move_towards(enemy, target, accessible_cells)
+                has_acted = True
 
         # Passer à l'unité ennemie suivante
         self.current_enemy_index = (self.current_enemy_index + 1) % len(self.game.enemy_units)
-        return True  # Une action a été effectuée
+        return has_acted
 
-    def find_priority_target(self, enemy, player_units):
-        """Trouve une cible prioritaire parmi les unités joueur."""
-        priority_target = None
-        min_health = float('inf')
+    def attack_with_laser(self, enemy, target):
+        """
+        Dessine un laser et effectue une attaque contre la cible.
+        """
+        # Afficher le laser
+        self.game.draw_laser(enemy, [target], (255, 0, 0))  # Rouge pour l'ennemi
 
-        for player_unit in player_units:
-            distance = abs(enemy.x - player_unit.x) + abs(enemy.y - player_unit.y)
-            if distance <= enemy.range and player_unit.vie < min_health:
-                min_health = player_unit.vie
-                priority_target = player_unit
+        # Appliquer les dégâts
+        damage = enemy.arme.degats
+        target.vie -= damage
+        print(f"{enemy.nom} attaque {target.nom} pour {damage} dégâts !")
 
-        return priority_target
+        # Vérifier si la cible est éliminée
+        if target.vie <= 0:
+            self.game.player_units.remove(target)
+            print(f"{target.nom} est éliminé !")
 
     def find_closest_unit(self, enemy, player_units):
-        """Trouve l'unité alliée la plus proche d'une unité ennemie."""
+        """
+        Trouve l'unité alliée la plus proche d'une unité ennemie.
+        """
         closest_unit = None
         min_distance = float('inf')
 
@@ -81,17 +81,17 @@ class EnemyAI:
         return closest_unit
 
     def move_towards(self, enemy, target, accessible_cells):
-        """Déplace l'unité ennemie vers une unité cible tout en évitant les herbes."""
+        """
+        Déplace l'unité ennemie vers une unité cible tout en évitant les herbes.
+        """
         best_cell = None
         min_distance = float('inf')
 
         for cell in accessible_cells:
             x, y = cell
-            # Vérifier que la case n'est pas occupée par un joueur
             if any(u.x == x and u.y == y for u in self.game.player_units):
-                continue
-            # Vérifier que la case n'est pas de l'herbe (type_case != 2)
-            if self.game.terrain.cases[x][y].type_case == 2:
+                continue  # Éviter les cases occupées par des joueurs
+            if self.game.terrain.cases[x][y].type_case == 2:  # Éviter les herbes
                 continue
             distance = abs(x - target.x) + abs(y - target.y)
             if distance < min_distance:
@@ -99,39 +99,5 @@ class EnemyAI:
                 best_cell = cell
 
         if best_cell:
-            self.move_to_cell(enemy, best_cell)
-
-    def move_to_cell(self, enemy, cell):
-        """Déplace une unité ennemie vers une cellule spécifique."""
-        enemy.x, enemy.y = cell
-
-    def move_away(self, enemy, target, accessible_cells):
-        """Déplace l'unité ennemie pour s'éloigner d'une unité cible."""
-        best_cell = None
-        max_distance = 0
-
-        for cell in accessible_cells:
-            x, y = cell
-            # Vérifier que la case n'est pas occupée par un joueur
-            if any(u.x == x and u.y == y for u in self.game.player_units):
-                continue
-            # Vérifier que la case n'est pas de l'herbe (type_case != 2)
-            if self.game.terrain.cases[x][y].type_case == 2:
-                continue
-            distance = abs(x - target.x) + abs(y - target.y)
-            if distance > max_distance:
-                max_distance = distance
-                best_cell = cell
-
-        if best_cell:
-            self.move_to_cell(enemy, best_cell)
-
-    def attack(self, enemy, target):
-        """Fait attaquer une unité ennemie une unité cible."""
-        target.vie -= enemy.arme.degats
-        if target.vie <= 0:
-            self.game.player_units.remove(target)
-        else:
-            # Après une attaque, essayer de s'éloigner
-            accessible_cells = self.game.get_accessible_cells(enemy)
-            self.move_away(enemy, target, accessible_cells)
+            enemy.x, enemy.y = best_cell
+            print(f"{enemy.nom} se déplace vers ({best_cell[0]}, {best_cell[1]}).")

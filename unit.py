@@ -125,33 +125,49 @@ class Type_Unite(Unit):
         player_y = [p.y for p in players] 
 
         player_coordinates = [[x,y] for x,y in zip(player_x,player_y)]
+
         # Vérifier si la position est valide
         if 0 <= new_x < NUM_COLUMNS and 0 <= new_y < NUM_ROWS -1:
             target_case = terrain.cases[new_x][new_y]
 
             # Si la case est un obstacle, l'unité ne peut pas avancer
             if target_case.type_case == 1 or [new_x,new_y] in player_coordinates :
-                print(f"L'unité {self.nom} ne peut pas avancer : obstacle détecté.")
+                print(f"L'unité {self.nom} ne peut pas avancer : obstacle détecté ou la case contient un joueur.")
                 return False
+            
             elif target_case.type_case == 2:  # Herbe
                 self.x = new_x #Faire le deplacement avant l'animation
                 self.y = new_y
                 print(f"L'unité {self.nom} traverse une case d'herbe et perd 10 points de vie.")
                 self.vie -= 10
                 self.game.animate_effect(new_x, new_y, "leaf")  # Animation pour herbe
+                terrain.delete_after_use(new_x,new_y)
                 return True
+            
             elif target_case.type_case == 3:  # Cœur
                 self.x = new_x
                 self.y = new_y
                 print(f"L'unité {self.nom} récupère de la vie en passant sur une case de santé.")
                 self.vie = min(100, self.vie + 20)
                 self.game.animate_effect(new_x, new_y, "heart")  # Animation pour cœur
+                self.game.sound_manager.play_sound("heart")
+                terrain.delete_after_use(new_x,new_y)
                 return True
+            
             elif target_case.type_case == 4:  # Protection
                 self.x = new_x
                 self.y = new_y
                 print(f"L'unité {self.nom} est protégée par une case de protection.")
                 self.game.animate_effect(new_x, new_y, "star")  # Animation pour protection
+                return True
+            
+            elif target_case.type_case == 5:  # Trous
+                cases_valides = [(i, j) for i in range(len(terrain.cases)) for j in range(len(terrain.cases[0])) if [i,j] not in terrain.obstacles+terrain.protection+player_coordinates+terrain.health ] 
+                case_tiree = random.choice(cases_valides)  #tirage
+                self.vie -= 10
+                self.x = case_tiree[0]
+                self.y = case_tiree[1]
+                print(f"L'unité {self.nom} est déplacé vers une case aléatoire.")
                 return True
 
             self.x = new_x

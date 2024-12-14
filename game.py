@@ -5,6 +5,8 @@ from unit import *
 from Feu import *
 from Competence import *
 from IA import *
+from Sounds import *
+
 
 
 #Bibliothèque pour lire et afficher un gif derrière le menu démarrage 
@@ -44,6 +46,7 @@ class Game:
         self.mode = "solo"
         self.sound_on = True
         self.running = True
+        self.sound_manager = SoundManager()
 
         
 
@@ -168,6 +171,10 @@ class Game:
                         if hasattr(self, 'icon_rect') and self.icon_rect.collidepoint(event.pos):
                             self.toggle_music()
 
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+                        print("Touche P pressée")  # Débogage
+                        self.show_pause_menu()
+                        
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
                             return "menu"
@@ -215,7 +222,7 @@ class Game:
                         if event.key == pygame.K_SPACE:
                             for enemy in self.enemy_units:
                                 if abs(selected_unit.x - enemy.x) <= selected_unit.deplacement_distance and abs(selected_unit.y - enemy.y) <= selected_unit.deplacement_distance:
-                                    self.play_attack_sound()
+                                    self.sound_manager.play_sound("attack")
                                     if selected_unit.arme.nom == "Bombe":
                                     # Utiliser l'effet de la bombe
                                         bombe_effet(
@@ -233,6 +240,7 @@ class Game:
                                         self.remove(enemy)
                                         self.ajouter_message(f"{enemy.nom} est éliminé!")
                                         print(enemy.nom, 'est éliminé ')
+                                        self.sound_manager.play_sound("death")
                                         self.player_score += 1
                                     has_acted = True  # Fin du tour pour cette unité
                         competence_used = False
@@ -288,7 +296,9 @@ class Game:
                         if event.type == pygame.MOUSEBUTTONDOWN:
                             if hasattr(self, 'icon_rect') and self.icon_rect.collidepoint(event.pos):
                                 self.toggle_music()
-
+                        if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+                            print("Touche P pressée")  # Débogage
+                            self.show_pause_menu()
                         # Déplacement du curseur avec les flèches du clavier
                         if event.key == pygame.K_LEFT:
                             if (cursor_x - 1, cursor_y) in accessible_cells:
@@ -330,7 +340,7 @@ class Game:
                                 if abs(selected_unit.x - player.x) <= selected_unit.deplacement_distance and abs(selected_unit.y - player.y) <= selected_unit.deplacement_distance: 
                                     
                                     # Effectue l'attaque
-                                    self.play_attack_sound()
+                                    self.sound_manager.play_sound("attack")
                                     if selected_unit.arme.nom == "Bombe":
                                     # Utiliser l'effet de la bombe
                                         bombe_effet(
@@ -347,6 +357,7 @@ class Game:
                                         self.remove(player)
                                         self.ajouter_message(f"{player.nom} est éliminé!")
                                         print(player.nom, 'est éliminé ')
+                                        self.sound_manager.play_sound("death")
                                         self.enemy_score += 1
                                     has_acted = True  # Fin du tour pour cette unité
                         competence_used = False
@@ -450,14 +461,73 @@ class Game:
 
         # Continuer le jeu si aucune condition de fin n'est remplie
         return None
-    
+
+    def show_end_screen(self,txt) :
+        """Afficher l'écran de la fin du jeu"""
+
+        font = pygame.font.Font(None, 50)
+        small_font = pygame.font.Font(None, 36)
+
+        # Charger l'image de fond
+        background = pygame.image.load("image/menu1234.png")
+        background = pygame.transform.scale(background, (self.screen.get_width(), self.screen.get_height()))
+
+        # Définir les boutons
+        button_width, button_height = 300, 50
+        quit_button_rect = pygame.Rect(
+            (self.screen.get_width() - button_width) // 2, 
+            self.screen.get_height() // 2 - 60, 
+            button_width, 
+            button_height
+        )
+        menu_button_rect = pygame.Rect(
+            (self.screen.get_width() - button_width) // 2, 
+            self.screen.get_height() // 2 + 20, 
+            button_width, 
+            button_height
+        )
+
+        r= True 
+
+        while r:
+            self.screen.blit(background, (0, 0))
+
+            # Afficher le titre 
+            text = font.render(txt, True, (255, 255, 255))
+            self.screen.blit(text, ((self.screen.get_width() - text.get_width()) // 2, self.screen.get_height() // 2 - 150))
+
+            # Dessiner les boutons
+            pygame.draw.rect(self.screen, BLACK, quit_button_rect)  # Vert pour "Reprendre"
+            pygame.draw.rect(self.screen, BLACK, menu_button_rect)  # Rouge pour "Menu Principal"
+
+            # Ajouter le texte sur les boutons
+            quit_text = small_font.render("Quitter", True, (255, 255, 255))
+            menu_text = small_font.render("Menu Principal", True, (255, 255, 255))
+            self.screen.blit(quit_text, (quit_button_rect.centerx - quit_text.get_width() // 2, quit_button_rect.centery - text.get_height() // 2))
+            self.screen.blit(menu_text, (menu_button_rect.centerx - menu_text.get_width() // 2, menu_button_rect.centery - menu_text.get_height() // 2))
+
+            pygame.display.flip()
+
+            # Gérer les événements
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if quit_button_rect.collidepoint(event.pos):
+                        pygame.quit()
+                        exit()
+                    if menu_button_rect.collidepoint(event.pos):
+                        main()  #Relancer le jeu 
+
+
+
     def show_pause_menu(self):
         """
         Affiche un menu de pause avec deux boutons cliquables :
         1. Reprendre le jeu.
         2. Retourner au menu principal.
         """
-        print("Entrée dans le menu de pause")  # Débogage
         font = pygame.font.Font(None, 50)
         small_font = pygame.font.Font(None, 36)
 
@@ -480,7 +550,9 @@ class Game:
             button_height
         )
 
-        while True:
+        r= True 
+
+        while r:
             self.screen.blit(background, (0, 0))
 
             # Afficher le titre "Pause"
@@ -501,19 +573,15 @@ class Game:
 
             # Gérer les événements
             for event in pygame.event.get():
-                print(f"Événement reçu : {event}")  # Débogage
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if resume_button_rect.collidepoint(event.pos):
-                        print("Bouton Reprendre cliqué")  # Débogage
-                        return "resume"  # Reprendre le jeu
+                        r=False #sortir de la boucle et reprendrre le jeu 
                     if menu_button_rect.collidepoint(event.pos):
-                        print("Bouton Menu Principal cliqué")  # Débogage
-                        return "menu"  # Retourner au menu principal
+                        main()  #Relancer le jeu 
 
-    
 
     def toggle_music(self):
         """Active ou désactive la musique.
@@ -1007,19 +1075,6 @@ def main():
 
             # while game.running:
             while game.running:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        exit()
-                    if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
-                        print("Touche P pressée")  # Débogage
-                        result = game.show_pause_menu()
-                        if result == "menu":  # Retour au menu principal
-                            game.running = False
-                            break
-                        elif result == "resume":  # Reprendre le jeu
-                            continue
-
                 # Gestion des tours et logique du jeu
                 game.flip_display()
                 if is_player_turn:

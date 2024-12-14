@@ -13,6 +13,7 @@ icon_herbe = pygame.image.load("image/Herbe.png")
 icon_desert = pygame.image.load("image/carte.png")
 icon_health = pygame.image.load("image/health.png")
 icon_protection = pygame.image.load("image/protection.png")  # Ajoutez une icône pour la protection
+icon_trou = pygame.image.load("image/Trou.png")  # Ajoutez une icône pour la protection
 
 
 NUM_COLUMNS = 37
@@ -25,6 +26,8 @@ icon_herbe = pygame.transform.scale(icon_herbe, (CELL_SIZE, CELL_SIZE))
 icon_desert = pygame.transform.scale(icon_desert, (CELL_SIZE, CELL_SIZE))
 icon_health = pygame.transform.scale(icon_health, (CELL_SIZE, CELL_SIZE))
 icon_protection = pygame.transform.scale(icon_protection, (CELL_SIZE, CELL_SIZE))
+icon_trou = pygame.transform.scale(icon_trou, (CELL_SIZE, CELL_SIZE))
+
 class Case:
     def __init__(self, type_case, x, y, effet=None):
         self.type_case = type_case
@@ -44,6 +47,9 @@ class Case:
             screen.blit(icon_health, position)
         elif self.type_case == 4:  # Protection
             screen.blit(icon_protection, position)
+        elif self.type_case == 5:  # Protection
+            screen.blit(icon_trou, position)
+        
         
             # screen.blit(icon_desert, position)
 
@@ -56,6 +62,9 @@ class Terrain:
         self.obstacles = [] 
         self.herbes = [] 
         self.health = []
+        self.trous = []
+        self.protection = []
+
 
     def generer_grille(self):
 
@@ -86,9 +95,12 @@ class Terrain:
         [19,6], [18,6], [19,7], [18,7],
         ]
         
-        liste_protection = [[2, 2], [10, 10], [15, 15], [7, 7]]
-        liste_interdite_herbe = [[0,i] for i in range(NUM_ROWS)]+[[NUM_COLUMNS-1 , j] for j in range(NUM_ROWS)]
-        liste_interdite_health = [[9,i] for i in range(NUM_ROWS)]+[[NUM_COLUMNS-9 , j] for j in range(NUM_ROWS)] #Afin de mettre les soin au milieu seulement 
+        liste_protection = [[10, 4], [10, 10], [12, 5], [27,3],[15,15], [15,5], [23,7], [30,8],[17,0]]
+        liste_trous = [[5,4],[5,12], [15,7],[31,5],[30,13]]
+
+        #Afin de ne pas avoir de l'herbe sur les joueurs au début 
+        liste_interdite_herbe = [[0,i] for i in range(NUM_ROWS)]+[[NUM_COLUMNS-1 , j] for j in range(NUM_ROWS)] 
+    
         for x in range(self.largeur):
             ligne = []
             for y in range(self.hauteur):
@@ -96,14 +108,18 @@ class Terrain:
                 if [x,y] in liste_obstacles :
                     case_type = 1  # Obstacle
                  
-                elif random.random() < 0.05: #Probabilité d'avoir du herbe de 5%
-                    case_type = 2
+                elif random.random() < 0.03: #Probabilité d'avoir du herbe de 5%
+                    case_type = 2 #herbe
                     self.herbes.append([x,y])
-                elif random.random() < 0.01 and [x,y] not in liste_interdite_herbe + liste_protection + liste_interdite_health :
-                    case_type = 3  
+                elif random.random() < 0.035 and 7 <= x <= NUM_COLUMNS-10 and 7 <= y <= NUM_ROWS-7 and [x,y] not in liste_obstacles+liste_protection+liste_trous+self.herbes : #les mettre au milieu de la carte seulement
+                    case_type = 3  #health
                     self.health.append([x,y])
                 elif [x, y] in liste_protection:  # Ajout des cases fixes de protection
-                    case_type = 4
+                    case_type = 4 #protection 
+                    self.protection.append([x,y])
+                elif [x, y] in liste_trous:  # Ajout des cases fixes de protection
+                    case_type = 5 #trou 
+                    self.trous.append([x,y])
                 else : 
                     case_type = 0 
                 
@@ -112,6 +128,7 @@ class Terrain:
                 nouvelle_case = Case(case_type, x, y)
                 ligne.append(nouvelle_case)  # Ajout de la case à la ligne
             self.cases.append(ligne)
+
         self.obstacles= liste_obstacles
     
 
@@ -126,16 +143,19 @@ class Terrain:
         for x in range(self.largeur):
             for y in range(self.hauteur):
                 # Ignorer les cases d'obstacles ou de santé
-                if [x, y] in self.obstacles + self.health:
+                if [x, y] in self.obstacles + self.health + self.trous :
                     continue
                 # Générer une nouvelle herbe avec une probabilité de 5%
-                if random.random() < 0.05:
+                if random.random() < 0.03:
                     self.cases[x][y] = Case(2, x, y)
                     nouvelle_liste.append([x, y])
 
         self.herbes = nouvelle_liste
         print(f"Les herbes ont été mélangées. Nouvelle liste : {self.herbes}")
 
+    def delete_after_use(self,x,y):
+        """Fonction qui suprime les  balises aprés leurs utilisation"""
+        self.cases[x][y] = Case(0,x,y)
 
 
     def afficher_grille(self, screen):
