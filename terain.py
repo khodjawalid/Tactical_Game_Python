@@ -3,7 +3,7 @@ import random
 import numpy as np
 from unit import *
 from game import *
-from main import *
+#from main import *
 
 # Charger les images (icônes)
 
@@ -87,7 +87,8 @@ class Terrain:
         ]
         
         liste_protection = [[2, 2], [10, 10], [15, 15], [7, 7]]
-        liste_interdite = [[0,i] for i in range(NUM_ROWS)]+[[NUM_COLUMNS-1 , j] for j in range(NUM_ROWS)]
+        liste_interdite_herbe = [[0,i] for i in range(NUM_ROWS)]+[[NUM_COLUMNS-1 , j] for j in range(NUM_ROWS)]
+        liste_interdite_health = [[9,i] for i in range(NUM_ROWS)]+[[NUM_COLUMNS-9 , j] for j in range(NUM_ROWS)] #Afin de mettre les soin au milieu seulement 
         for x in range(self.largeur):
             ligne = []
             for y in range(self.hauteur):
@@ -95,9 +96,10 @@ class Terrain:
                 if [x,y] in liste_obstacles :
                     case_type = 1  # Obstacle
                  
-                elif random.random() < 0.01: #Probabilité d'avoir du herbe de 5%
+                elif random.random() < 0.05: #Probabilité d'avoir du herbe de 5%
                     case_type = 2
-                elif random.random() < 0.01 and [x,y] not in liste_interdite  not in liste_protection :
+                    self.herbes.append([x,y])
+                elif random.random() < 0.01 and [x,y] not in liste_interdite_herbe + liste_protection + liste_interdite_health :
                     case_type = 3  
                     self.health.append([x,y])
                 elif [x, y] in liste_protection:  # Ajout des cases fixes de protection

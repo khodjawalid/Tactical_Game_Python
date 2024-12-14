@@ -1,7 +1,7 @@
 import pygame
 from terain import * # Vérifiez que 'terain' est bien importé, cela semble être une faute de frappe pour 'terrain'
 from unit import *
-from main import *
+#from main import *
 from Feu import *
 from Competence import *
 from IA import *
@@ -68,10 +68,10 @@ class Game:
         ]
 
         self.enemy_units = [
-            Type_Unite("Alex", 0, 7, 100, 30, "enemy", 10, 1, [competence_soin], epee ,"0",1,game =self),
-            Type_Unite("Clara", 0, 8, 100, 25, "enemy", 15, 2, [competence_bouclier], arc , "1",2,game =self),
-            Type_Unite("Maxime", 0, 9, 100, 35, "enemy", 10, 3, [competence_poison],lance , "2",3,game =self),
-            Type_Unite("Sophie", 0, 10, 100, 20, "enemy", 20, 4, [competence_poison], arc, "3",1,game =self),
+            Type_Unite("Alex", 0, NUM_ROWS-5, 100, 30, "enemy", 10, 1, [competence_soin], epee ,"0",1,game =self),
+            Type_Unite("Clara", 0, NUM_ROWS-2, 100, 25, "enemy", 15, 2, [competence_bouclier], arc , "1",2,game =self),
+            Type_Unite("Maxime", 0, NUM_ROWS-3, 100, 35, "enemy", 10, 3, [competence_poison],lance , "2",3,game =self),
+            Type_Unite("Sophie", 0, NUM_ROWS-4, 100, 20, "enemy", 20, 4, [competence_poison], arc, "3",1,game =self),
         ]
 
         for unit in self.player_units + self.enemy_units:
@@ -163,6 +163,10 @@ class Game:
                     if event.type == pygame.QUIT:
                         pygame.quit()
                         exit()
+            
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if hasattr(self, 'icon_rect') and self.icon_rect.collidepoint(event.pos):
+                            self.toggle_music()
 
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
@@ -195,7 +199,7 @@ class Game:
                             if (cursor_x, cursor_y) in accessible_cells:
                                 dx = cursor_x - selected_unit.x
                                 dy = cursor_y - selected_unit.y
-                                if selected_unit.move(dx, dy, self.terrain):  # Appelle move avec les décalages
+                                if selected_unit.move(dx, dy, self.terrain,self.player_units):  # Appelle move avec les décalages
                                     self.flip_display()  # Met à jour l'affichage après déplacement
                                     has_acted = True
                                 else:
@@ -281,6 +285,10 @@ class Game:
                         if event.key == pygame.K_ESCAPE:
                             return "menu"
 
+                        if event.type == pygame.MOUSEBUTTONDOWN:
+                            if hasattr(self, 'icon_rect') and self.icon_rect.collidepoint(event.pos):
+                                self.toggle_music()
+
                         # Déplacement du curseur avec les flèches du clavier
                         if event.key == pygame.K_LEFT:
                             if (cursor_x - 1, cursor_y) in accessible_cells:
@@ -308,7 +316,7 @@ class Game:
                             if (cursor_x, cursor_y) in accessible_cells:
                                 dx = cursor_x - selected_unit.x
                                 dy = cursor_y - selected_unit.y
-                                if selected_unit.move(dx, dy, self.terrain):  # Appelle move avec les décalages
+                                if selected_unit.move(dx, dy, self.terrain,self.player_units):  # Appelle move avec les décalages
                                     self.flip_display()  # Met à jour l'affichage après déplacement
                                     has_acted = True
                                 else:
@@ -424,16 +432,6 @@ class Game:
         else:
             print(f"L'unité {unit.nom} n'a pas été trouvée dans les listes.")
 
-    def handle_icon_click(self, mouse_x, mouse_y):
-        """
-        Gère le clic sur l'icône du son pour activer ou désactiver la musique.
-        """
-        if self.icon_x <= mouse_x <= self.icon_x + self.ICON_SIZE and self.icon_y <= mouse_y <= self.icon_y + self.ICON_SIZE:
-            self.sound_on = not self.sound_on  # Inverse l'état du son
-            if self.sound_on:
-                pygame.mixer.music.unpause()
-            else:
-                pygame.mixer.music.pause()
 
     def check_end_game(self):
         """
@@ -516,14 +514,16 @@ class Game:
                         return "menu"  # Retourner au menu principal
 
     
+
     def toggle_music(self):
-        """Active ou désactive la musique."""
-        self.sound_on = not self.sound_on
+        """Active ou désactive la musique.
+        On fait l'appell dans hundle player turn et enemy turen car ce sont les boucles qui tournes tout le temps"""
         if self.sound_on:
             pygame.mixer.music.unpause()
+            self.sound_on = False
         else:
             pygame.mixer.music.pause()
-
+            self.sound_on = True
 
 
     def flip_display(self):
@@ -548,12 +548,6 @@ class Game:
 
         # Dessiner le tableau d'affichage (avec l'icône)
         self.afficher_tableau()
-
-        # Gestion des événements pour l'icône de musique
-        for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if hasattr(self, 'icon_rect') and self.icon_rect.collidepoint(event.pos):
-                    self.toggle_music()
 
         pygame.display.flip()
 
@@ -676,6 +670,7 @@ class Game:
             self.screen.blit(message_text, (20, y_offset))  # Alignement à gauche
             y_offset += text_height + 2  # Espacement entre les lignes
 
+
         # Ajouter l'icône de la musique
         icon_path = "image/son_icon.png" if self.sound_on else "image/son_icon.png"
         icon = pygame.image.load(icon_path)
@@ -710,7 +705,6 @@ class Game:
                     if target_case.type_case == 1:  # Obstacle
                         continue  # Ignorer cette case
                     elif target_case.type_case == 2:  # Herbe
-                        print(f"Case d'herbe détectée à ({target_x}, {target_y}). Accessible avec effet.")
                         accessible_cells.append((target_x, target_y))
                     elif target_case.type_case == 3:  # Santé
                         accessible_cells.append((target_x, target_y))
@@ -1043,11 +1037,10 @@ def main():
 
 
                 # Mélanger le terrain tous les 8 tours
-                if game.tour % 8 == 0:
+                if game.tour % 2 == 0:
                     game.terrain.melanger()
 
                 # Incrémenter les tours pour affichage
-                game.tour += 1
 
 
         # elif action == "Multiplayers":
@@ -1069,7 +1062,8 @@ def main():
                             break
                         elif result == "resume":
                             continue
-
+                
+                game.flip_display()
                 # Logique des tours pour les joueurs
                 for player_unit, enemy_unit in zip(game.player_units[:4], game.enemy_units[:4]):
                     result = game.handle_player_turn()
@@ -1086,6 +1080,10 @@ def main():
                     if result == "menu":
                         game.running = False
                         break
+
+                    # Mélanger le terrain tous les 8 tours
+                if game.tour % 2 == 0:
+                    game.terrain.melanger()
 
 
 

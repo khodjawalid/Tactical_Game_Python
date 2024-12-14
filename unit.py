@@ -2,19 +2,17 @@ import os
 import pygame
 import random
 from game import *
-from main import *
+#from main import *
 from Feu import *
 from IA import *
 
 # Constantes
 GRID_SIZE = 8
 CELL_SIZE = 40
-# WIDTH = GRID_SIZE * CELL_SIZE
-# HEIGHT = GRID_SIZE * CELL_SIZE
-WIDTH = NUM_COLUMNS* CELL_SIZE
-HEIGHT = NUM_ROWS * CELL_SIZE
 NUM_ROWS = 18
 NUM_COLUMNS = 37
+WIDTH = NUM_COLUMNS* CELL_SIZE
+HEIGHT = NUM_ROWS * CELL_SIZE
 FPS = 30
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -115,7 +113,7 @@ class Type_Unite(Unit):
 
 
     
-    def move(self, dx, dy, terrain):
+    def move(self, dx, dy, terrain,players):
         """
         Déplace l'unité d'une case en fonction de sa capacité de déplacement.
         """
@@ -123,27 +121,39 @@ class Type_Unite(Unit):
         new_x = self.x + dx
         new_y = self.y + dy
 
+        player_x = [p.x for p in players]
+        player_y = [p.y for p in players] 
+
+        player_coordinates = [[x,y] for x,y in zip(player_x,player_y)]
         # Vérifier si la position est valide
         if 0 <= new_x < NUM_COLUMNS and 0 <= new_y < NUM_ROWS -1:
             target_case = terrain.cases[new_x][new_y]
 
             # Si la case est un obstacle, l'unité ne peut pas avancer
-            if target_case.type_case == 1:
+            if target_case.type_case == 1 or [new_x,new_y] in player_coordinates :
                 print(f"L'unité {self.nom} ne peut pas avancer : obstacle détecté.")
                 return False
             elif target_case.type_case == 2:  # Herbe
+                self.x = new_x #Faire le deplacement avant l'animation
+                self.y = new_y
                 print(f"L'unité {self.nom} traverse une case d'herbe et perd 10 points de vie.")
                 self.vie -= 10
                 self.game.animate_effect(new_x, new_y, "leaf")  # Animation pour herbe
+                return True
             elif target_case.type_case == 3:  # Cœur
+                self.x = new_x
+                self.y = new_y
                 print(f"L'unité {self.nom} récupère de la vie en passant sur une case de santé.")
                 self.vie = min(100, self.vie + 20)
                 self.game.animate_effect(new_x, new_y, "heart")  # Animation pour cœur
+                return True
             elif target_case.type_case == 4:  # Protection
+                self.x = new_x
+                self.y = new_y
                 print(f"L'unité {self.nom} est protégée par une case de protection.")
                 self.game.animate_effect(new_x, new_y, "star")  # Animation pour protection
+                return True
 
-            # Déplacer l'unité
             self.x = new_x
             self.y = new_y
             return True
