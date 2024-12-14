@@ -44,6 +44,7 @@ class Game:
         self.mode = "solo"
         self.sound_on = True
         self.running = True
+        self.sound_manager = SoundManager()
 
         
 
@@ -219,7 +220,7 @@ class Game:
                         if event.key == pygame.K_SPACE:
                             for enemy in self.enemy_units:
                                 if abs(selected_unit.x - enemy.x) <= selected_unit.deplacement_distance and abs(selected_unit.y - enemy.y) <= selected_unit.deplacement_distance:
-                                    self.play_attack_sound()
+                                    self.sound_manager.play_sound("attack")
                                     if selected_unit.arme.nom == "Bombe":
                                     # Utiliser l'effet de la bombe
                                         bombe_effet(
@@ -228,8 +229,11 @@ class Game:
                                             terrain=self.terrain,
                                             game_instance=self
                                         )
+                                        
+                                        # self.animate_bomb_effect([enemy])
                                     else:
                                         selected_unit.attaquer_avec_arme(enemy, self.terrain, self)
+                                        self.animate_attack_effect(enemy.x, enemy.y)
                                     # selected_unit.attaquer_avec_arme(enemy, self.terrain)
                                     message = f"{selected_unit.nom} utilise {selected_unit.arme.nom} sur {enemy.nom}!"
                                     self.ajouter_message(message)
@@ -237,6 +241,7 @@ class Game:
                                         self.remove(enemy)
                                         self.ajouter_message(f"{enemy.nom} est éliminé!")
                                         print(enemy.nom, 'est éliminé ')
+                                        self.sound_manager.play_sound("death")
                                         self.player_score += 1
                                     has_acted = True  # Fin du tour pour cette unité
                         competence_used = False
@@ -336,7 +341,7 @@ class Game:
                                 if abs(selected_unit.x - player.x) <= selected_unit.deplacement_distance and abs(selected_unit.y - player.y) <= selected_unit.deplacement_distance: 
                                     
                                     # Effectue l'attaque
-                                    self.play_attack_sound()
+                                    self.sound_manager.play_sound("attack")
                                     if selected_unit.arme.nom == "Bombe":
                                     # Utiliser l'effet de la bombe
                                         bombe_effet(
@@ -345,14 +350,17 @@ class Game:
                                             terrain=self.terrain,
                                             game_instance=self
                                         )
+                                        # self.animate_bomb_effect([player])
                                     else:
                                         selected_unit.attaquer_avec_arme(player, self.terrain, self)
+                                        self.animate_attack_effect(player.x, player.y)
                                     message = f"{selected_unit.nom} utilise {selected_unit.arme.nom} sur {player.nom}!"
                                     self.ajouter_message(message)
                                     if player.vie <= 0:
                                         self.remove(player)
                                         self.ajouter_message(f"{player.nom} est éliminé!")
                                         print(player.nom, 'est éliminé ')
+                                        self.sound_manager.play_sound("death")
                                         self.enemy_score += 1
                                     has_acted = True  # Fin du tour pour cette unité
                         competence_used = False
@@ -828,3 +836,57 @@ class Game:
         for x, y in accessible_cells:
             rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             pygame.draw.rect(self.screen, (255, 255, 150), rect, 2)  # Dessine les cases en bleu
+    
+    def animate_attack_effect(self, x, y):
+        """
+        Anime des gouttes de sang à la position d'une unité après une attaque.
+
+        Args:
+            x (int): Coordonnée x de la case (en cellules).
+            y (int): Coordonnée y de la case (en cellules).
+        """
+        blood_icon = pygame.image.load("image/blood.png")
+        icon_size = (30, 30)
+        blood_icon = pygame.transform.scale(blood_icon, icon_size)
+
+        # Position de l'effet
+        start_x = x * CELL_SIZE + CELL_SIZE // 2 - icon_size[0] // 2
+        start_y = y * CELL_SIZE + CELL_SIZE // 2 - icon_size[1] // 2
+
+        # Afficher l'effet pendant une courte durée
+        animation_duration = 500  # 0.5 seconde
+        start_time = pygame.time.get_ticks()
+
+        while pygame.time.get_ticks() - start_time < animation_duration:
+            self.flip_display()
+            self.screen.blit(blood_icon, (start_x, start_y))
+            pygame.display.update()
+            pygame.time.delay(50)
+
+        self.flip_display()
+
+
+    def animate_bomb_effect(self, affected_cells):
+        """
+        Anime une explosion ou un effet sur les cases touchées par une bombe.
+
+        Args:
+            affected_cells (list): Liste des coordonnées des cases affectées.
+        """
+        explosion_icon = pygame.image.load("image/bombe.png")
+        icon_size = (40, 40)
+        explosion_icon = pygame.transform.scale(explosion_icon, icon_size)
+
+        animation_duration = 1000  # 1 seconde
+        start_time = pygame.time.get_ticks()
+
+        while pygame.time.get_ticks() - start_time < animation_duration:
+            self.flip_display()
+            for x, y in affected_cells:
+                pos_x = x * CELL_SIZE + CELL_SIZE // 2 - icon_size[0] // 2
+                pos_y = y * CELL_SIZE + CELL_SIZE // 2 - icon_size[1] // 2
+                self.screen.blit(explosion_icon, (pos_x, pos_y))
+            pygame.display.update()
+            pygame.time.delay(50)
+
+        self.flip_display()

@@ -5,12 +5,14 @@ import pygame
 from game import *
 
 from Feu import *
+from Sounds import *
 
 
 class EnemyAI:
     def __init__(self, game):
         self.game = game
         self.current_enemy_index = 0  # Index pour suivre quelle unité ennemie agit
+        self.sound_manager = SoundManager()
 
     def play_turn(self):
         """
@@ -54,6 +56,7 @@ class EnemyAI:
         """
         # Afficher le laser
         self.game.draw_laser(enemy, [target], (255, 0, 0))  # Rouge pour l'ennemi
+        self.game.animate_attack_effect(target.x, target.y)
 
         # Appliquer les dégâts
         damage = enemy.arme.degats
