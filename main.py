@@ -7,7 +7,18 @@ from PIL import Image, ImageSequence
 
 
 def select_player(screen, title, units):
-    """Permet de sélectionner un joueur ou un ennemi avec la souris."""
+    """
+    Permet à l'utilisateur de sélectionner un joueur ou un ennemi avec la souris.
+
+    Entrées :
+    - screen (pygame.Surface) : Surface de l'écran où afficher le menu.
+    - title (str) : Titre affiché en haut de l'écran.
+    - units (list[Type_Unite]) : Liste des unités disponibles pour la sélection.
+
+    Sorties :
+    - (Type_Unite) : L'unité sélectionnée par l'utilisateur.
+    """
+    
     font = pygame.font.Font(None, 60)
     small_font = pygame.font.Font(None, 36)
 
@@ -67,7 +78,16 @@ def select_player(screen, title, units):
 
 
 def play_gif_background(gif_path, screen):
-    """Lit un GIF et l'affiche en arrière-plan."""
+    """
+    Affiche un GIF en boucle comme arrière-plan.
+
+    Entrées :
+    - gif_path (str) : Chemin vers le fichier GIF.
+    - screen (pygame.Surface) : Surface de l'écran où afficher le GIF.
+
+    Sorties :
+    - Affiche les frames du GIF en boucle.
+    """
     # Charger le GIF avec Pillow
     gif = Image.open(gif_path)
     frames = [frame.copy() for frame in ImageSequence.Iterator(gif)]
@@ -95,7 +115,15 @@ def play_gif_background(gif_path, screen):
 
                             
 def splash_screen(screen):
-    """Affiche un écran de démarrage avec une image de fond et attend une touche."""
+    """
+    Affiche un écran de démarrage avec une image de fond et attend que l'utilisateur appuie sur "Entrée".
+
+    Entrées :
+    - screen (pygame.Surface) : Surface de l'écran où afficher l'image de démarrage.
+
+    Sorties :
+    - Retourne lorsque l'utilisateur appuie sur "Entrée".
+    """
    
     splash_image = pygame.image.load("image/menu123.jpg")  
     splash_image = pygame.transform.scale(splash_image, (WIDTH, HEIGHT + + TABLEAU_HEIGHT))
@@ -124,7 +152,15 @@ def splash_screen(screen):
 
 
 def menu(screen):
-    """Affiche le menu principal avec des boutons centrés et un GIF en arrière-plan."""
+    """
+    Affiche le menu principal avec des options interactives et un GIF en arrière-plan.
+
+    Entrées :
+    - screen (pygame.Surface) : Surface de l'écran où afficher le menu.
+
+    Sorties :
+    - (str) : L'action choisie par l'utilisateur ("Solo", "Multiplayers", ou quitter).
+    """
     font = pygame.font.Font(None, 74)
     small_font = pygame.font.Font(None, 36)
 
@@ -226,7 +262,7 @@ def main():
     pygame.display.set_caption("Mon jeu de stratégie")
     pygame.mixer.init()
     pygame.mixer.music.load("music.mp3")
-    pygame.mixer.music.set_volume(1)
+    pygame.mixer.music.set_volume(0.1)
     pygame.mixer.music.play(-1)
 
     while True:
