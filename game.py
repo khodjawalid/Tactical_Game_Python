@@ -91,6 +91,7 @@ class Game(affichage):
         self.sound_on = True
         self.running = True
         self.sound_manager = SoundManager()
+        self.attaque_txt = False
 
         
 
@@ -101,24 +102,24 @@ class Game(affichage):
         competence_glace = Competence( "galce", "ne bouge pas ",glace_eclatante_effet)
         
 
-        epee = Arme("Épée", degats=30, deplacement_distance=3, effet=epee_effet)
+        epee = Arme("Épée", degats=25, deplacement_distance=3, effet=epee_effet)
         arc = Arme("Arc", degats=20, deplacement_distance=10, effet=arc_effet)
-        lance = Arme("Lance", degats=25, deplacement_distance=8, effet=lance_effet)
-        bombe = Arme("Bombe", degats=40, deplacement_distance=5, effet=bombe_effet)
+        lance = Arme("Lance", degats=20, deplacement_distance=8, effet=lance_effet)
+        bombe = Arme("Bombe", degats=30, deplacement_distance=5, effet=bombe_effet)
 
         # Initialisation des unités des joueurs
         self.player_units = [
-            Type_Unite("Alex", 0, 0,  100, 30, "player", 10, 3, [competence_soin],epee ,"0",1, game =self),
-            Type_Unite("Clara", 0, 1, 100, 25, "player", 15, 3, [competence_bouclier],arc,"1",2,game =self),
-            Type_Unite("Maxime", 0, 2, 100, 35, "player", 10, 4, [competence_poison],lance ,"2",3,game =self),
-            Type_Unite("Sophie", 0, 3, 100, 20, "player", 20, 5, [competence_glace], bombe ,"3",1,game =self),
+            Type_Unite("Alex", 0, 8,  100, 30, "player", 10, 3, [competence_soin],bombe ,"0",1, game =self),
+            Type_Unite("Clara", 0, 9, 100, 25, "player", 15, 3, [competence_bouclier],arc,"1",2,game =self),
+            Type_Unite("Maxime", 0, 10, 100, 35, "player", 10, 4, [competence_poison],lance ,"2",3,game =self),
+            Type_Unite("Sophie", 0, 11, 100, 20, "player", 20, 5, [competence_glace], epee ,"3",1,game =self),
         ]
 
         self.enemy_units = [
-            Type_Unite("Alex", 0, NUM_ROWS-5, 100, 30, "enemy", 10, 3, [competence_soin], epee ,"0",1,game =self),
-            Type_Unite("Clara", 0, NUM_ROWS-2, 100, 25, "enemy", 15, 3, [competence_bouclier], arc , "1",2,game =self),
-            Type_Unite("Maxime", 0, NUM_ROWS-3, 100, 35, "enemy", 10, 4, [competence_poison],lance , "2",3,game =self),
-            Type_Unite("Sophie", 0, NUM_ROWS-4, 100, 20, "enemy", 20, 5, [competence_poison], arc, "3",1,game =self),
+            Type_Unite("Alex", NUM_COLUMNS-1, 6, 100, 30, "enemy", 10, 3, [competence_soin], bombe ,"0",1,game =self),
+            Type_Unite("Clara", NUM_COLUMNS-1, 7, 100, 25, "enemy", 15, 3, [competence_bouclier], arc , "1",2,game =self),
+            Type_Unite("Maxime", NUM_COLUMNS-1, 8, 100, 35, "enemy", 10, 4, [competence_poison],lance , "2",3,game =self),
+            Type_Unite("Sophie", NUM_COLUMNS-1, 9, 100, 20, "enemy", 20, 5, [competence_poison], epee, "3",1,game =self),
         ]
 
         for unit in self.player_units + self.enemy_units:
@@ -190,6 +191,7 @@ class Game(affichage):
     def handle_player_turn(self):
         # Tour du joueur : choisir une unité parmi les 4
         for selected_unit in self.player_units:
+            self.attaque_txt = False 
             has_acted = False
             selected_unit.is_selected = True
             self.flip_display()
@@ -261,9 +263,12 @@ class Game(affichage):
                                 # self.flip_display()
                                 # has_acted = True  # Fin du tour pour cette unité
 
+            self.attaque_txt = True
+            self.flip_display()
             #afficher les cases d'effet de l'arme 
             attaque_accessible_cells = self.get_attaque_accessible_cells(selected_unit)
             self.draw_attaque_accessible_cells(attaque_accessible_cells)
+
             pygame.display.flip()
 
 
@@ -276,26 +281,30 @@ class Game(affichage):
                     if event.type == pygame.QUIT:
                         pygame.quit()
                         exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if hasattr(self, 'icon_rect') and self.icon_rect.collidepoint(event.pos):
+                            self.toggle_music()
+
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+                        self.show_pause_menu()
+
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_SPACE:
                             for enemy in self.enemy_units:
                                 if abs(selected_unit.x - enemy.x) <= selected_unit.arme.deplacement_distance and abs(selected_unit.y - enemy.y) <= selected_unit.arme.deplacement_distance:
+
                                     self.sound_manager.play_sound("attack")
-                                    if selected_unit.arme.nom == "Bombe":
-                                    # Utiliser l'effet de la bombe
-                                        bombe_effet(
-                                                utilisateur=selected_unit,
-                                                cible=enemy,
-                                                terrain=self.terrain,
-                                                game_instance=self
-                                            )
-                                        # self.animate_bomb_effect([enemy])
-                                    else:
-                                        selected_unit.attaquer_avec_arme(enemy, self.terrain, self)
-                                        self.animate_attack_effect(enemy.x, enemy.y)
-                                    # selected_unit.attaquer_avec_arme(enemy, self.terrain)
+                                    
+                                    self.animate_attack_effect(enemy.x, enemy.y)
                                     message = f"{selected_unit.nom} utilise {selected_unit.arme.nom} sur {enemy.nom}!"
                                     self.ajouter_message(message)
+
+                                    if [enemy.x,enemy.y] in self.terrain.protection :
+                                        #si l'enemie' est sous protection, on attaque pas 
+                                        continue
+
+                                    selected_unit.attaquer_avec_arme(enemy, self.terrain, self)
+
                                     if enemy.vie <= 0:
                                         self.remove(enemy)
                                         self.ajouter_message(f"{enemy.nom} est éliminé!")
@@ -328,6 +337,11 @@ class Game(affichage):
                 
             selected_unit.is_selected = False  # Désélectionner l'unité
             self.tour += 1  # Passer au tour suivant
+
+        self.attaque_txt = False
+        self.flip_display()
+        pygame.display.flip()
+
         self.update_skill_effects()
         result = self.check_end_game()
         if result == "menu":
@@ -402,49 +416,6 @@ class Game(affichage):
                                     print(f"Déplacement vers ({cursor_x}, {cursor_y}) impossible.")
 
 
-                        # Attaque avec la barre espace
-                        if event.key == pygame.K_SPACE:
-                            for player in self.player_units:
-                                # Vérifie si le joueur est adjacent à l'ennemi
-                                if abs(selected_unit.x - player.x) <= selected_unit.arme.deplacement_distance and abs(selected_unit.y - player.y) <= selected_unit.arme.deplacement_distance: 
-                                    
-                                    # Effectue l'attaque
-                                    self.sound_manager.play_sound("attack")
-                                    if selected_unit.arme.nom == "Bombe":
-                                    # Utiliser l'effet de la bombe
-                                        bombe_effet(
-                                            utilisateur=selected_unit,
-                                            cible=player,
-                                            terrain=self.terrain,
-                                            game_instance=self
-                                        )
-                                        # self.animate_bomb_effect([player])
-                                    else:
-                                        selected_unit.attaquer_avec_arme(player, self.terrain, self)
-                                        self.animate_attack_effect(player.x, player.y)
-                                    message = f"{selected_unit.nom} utilise {selected_unit.arme.nom} sur {player.nom}!"
-                                    self.ajouter_message(message)
-                                    if player.vie <= 0:
-                                        self.remove(player)
-                                        self.ajouter_message(f"{player.nom} est éliminé!")
-                                        print(player.nom, 'est éliminé ')
-                                        self.sound_manager.play_sound("death")
-                                        self.enemy_score += 1
-                                    has_acted = True  # Fin du tour pour cette unité
-                        competence_used = False
-                        if event.key == pygame.K_c and not competence_used:
-                            if selected_unit.competences:
-                                print(f"Compétences disponibles : {[c.nom for c in selected_unit.competences]}")
-                                # Utiliser la première compétence par défaut (ou une logique pour choisir)
-                                competence = selected_unit.competences[0]
-                                competence.appliquer(selected_unit)  # Applique la compétence sur l'unité elle-même
-                                self.ajouter_message(f"{selected_unit.nom} utilise la compétence {competence.nom}!")
-                                self.draw_skill_icon(selected_unit)
-                                self.units_with_active_skills.append((selected_unit, pygame.time.get_ticks()))
-                                competence_used = True  # Empêche une autre utilisation de compétence ce tour
-                            else:
-                                print(f"{selected_unit.nom} n'a pas de compétence disponible.")
-
             #Zone d'effet de l'arme 
             attaque_accessible_cells = self.get_attaque_accessible_cells(selected_unit)
             self.draw_attaque_accessible_cells(attaque_accessible_cells)
@@ -460,32 +431,36 @@ class Game(affichage):
                     if event.type == pygame.QUIT:
                         pygame.quit()
                         exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if hasattr(self, 'icon_rect') and self.icon_rect.collidepoint(event.pos):
+                            self.toggle_music()
+
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+                        self.show_pause_menu()
+
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_SPACE:
                             for player in self.player_units:
                                 if abs(selected_unit.x - player.x) <= selected_unit.deplacement_distance and abs(selected_unit.y - player.y) <= selected_unit.deplacement_distance:
+                                    
                                     self.sound_manager.play_sound("attack")
-                                    if selected_unit.arme.nom == "Bombe":
-                                    # Utiliser l'effet de la bombe
-                                        bombe_effet(
-                                                utilisateur=selected_unit,
-                                                cible=player,
-                                                terrain=self.terrain,
-                                                game_instance=self
-                                            )
-                                        # self.animate_bomb_effect([enemy])
-                                    else:
-                                        selected_unit.attaquer_avec_arme(player, self.terrain, self)
-                                        self.animate_attack_effect(player.x, player.y)
-                                    # selected_unit.attaquer_avec_arme(enemy, self.terrain)
+                                    self.animate_attack_effect(player.x, player.y)
+                                
                                     message = f"{selected_unit.nom} utilise {selected_unit.arme.nom} sur {player.nom}!"
                                     self.ajouter_message(message)
+
+                                    if [player.x,player.y] in self.terrain.protection :
+                                        #si lle player est sous protection, on attaque pas 
+                                        continue 
+
+                                    selected_unit.attaquer_avec_arme(player, self.terrain, self)
+
                                     if player.vie <= 0:
                                         self.remove(player)
                                         self.ajouter_message(f"{player.nom} est éliminé!")
                                         print(player.nom, 'est éliminé ')
                                         self.sound_manager.play_sound("death")
-                                        self.player_score += 1
+                                        self.enemy_score += 1
                                 attaque_competence = False 
 
                         competence_used = False #fin du tour
@@ -629,7 +604,7 @@ class Game(affichage):
             self.screen.blit(background, (0, 0))
 
             # Afficher le titre 
-            text = font.render(txt, True, (255, 255, 255))
+            text = font.render(txt, True, BLACK)
             self.screen.blit(text, ((self.screen.get_width() - text.get_width()) // 2, self.screen.get_height() // 2 - 150))
 
             # Dessiner les boutons
@@ -716,6 +691,7 @@ class Game(affichage):
                     if resume_button_rect.collidepoint(event.pos):
                         r=False #sortir de la boucle et reprendrre le jeu 
                     if menu_button_rect.collidepoint(event.pos):
+                        pygame.quit()
                         main()  #Relancer le jeu 
 
 
@@ -862,7 +838,7 @@ class Game(affichage):
         text_width = score_text.get_width()
         text_height = score_text.get_height()
         text_x = (WIDTH - text_width) // 2
-        text_y = HEIGHT - TABLEAU_HEIGHT * 2 + 40  # Espace au-dessus des messages
+        text_y = HEIGHT - TABLEAU_HEIGHT * 2 + CELL_SIZE  # Espace au-dessus des messages
 
         message_fond = pygame.font.Font(None, 24)
         self.screen.blit(score_text, (text_x, text_y))
@@ -874,6 +850,16 @@ class Game(affichage):
             self.screen.blit(message_text, (20, y_offset))  # Alignement à gauche
             y_offset += text_height + 2  # Espacement entre les lignes
 
+        """Affiche un texte en bas de l'écran, sans fond."""
+        # Rendre le texte
+        if self.attaque_txt :
+            text = font.render("Espace -> Attaque    |    Entrer -> Skip   |   P -> Pause",True, BLACK)
+            text_w= text.get_width()
+            text_h = text.get_height()
+            text_xx = (WIDTH - text_width) // 2 - 3*CELL_SIZE
+            text_yy = HEIGHT - TABLEAU_HEIGHT * 2 + 2*CELL_SIZE  # Espace au-dessus des messages
+            message_fond = pygame.font.Font(None, 24)
+            self.screen.blit(text, (text_xx, text_yy))
 
         # Ajouter l'icône de la musique
         icon_path = "image/son_icon.png" if self.sound_on else "image/son_icon.png"
@@ -918,7 +904,7 @@ class Game(affichage):
         return accessible_cells
 
     
-    def draw_skill_icon(self, unit, icon_path="image/skill_activation_icon.jpg"):
+    def draw_skill_icon(self, unit, icon_path="image/skill_activation_icon.png"):
         """
         Dessine une icône au-dessus d'une unité pour indiquer qu'une compétence est activée.
         
@@ -929,11 +915,11 @@ class Game(affichage):
         try:
             # Charger l'icône
             icon = pygame.image.load(icon_path)
-            icon = pygame.transform.scale(icon, (15, 15))  # Redimensionner l'icône si nécessaire
+            icon = pygame.transform.scale(icon, (120, 120))  # Redimensionner l'icône si nécessaire
 
             # Positionner l'icône juste au-dessus de l'unité
-            icon_x = unit.x * CELL_SIZE + (CELL_SIZE - icon.get_width()) // 2
-            icon_y = unit.y * CELL_SIZE - 15  # Placer l'icône au-dessus de l'unité
+            icon_x = unit.x * CELL_SIZE -42
+            icon_y = unit.y * CELL_SIZE -40
 
             # Dessiner l'icône
             self.screen.blit(icon, (icon_x, icon_y))
@@ -1053,6 +1039,7 @@ class Game(affichage):
                         accessible_cells.append((target_x, target_y))
 
         return accessible_cells
+    
     def draw_attaque_accessible_cells(self, accessible_cells):
         """Dessine les cases accessibles ."""
         for x, y in accessible_cells:

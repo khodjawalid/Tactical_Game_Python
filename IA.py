@@ -1,32 +1,22 @@
 from game import *
-
 import pygame
-
+import time
 from game import *
-
 from Feu import *
 from Sounds import *
 
+latence = 0.7  # le temps d'attente entre les mouvements de l'ia 
 
 class EnemyAI:
     """
     Classe représentant l'intelligence artificielle des ennemis.
-
     Attributs :
     - game (Game) : Référence à l'instance du jeu.
     - current_enemy_index (int) : Index de l'ennemi actuellement en train de jouer.
     - sound_manager (SoundManager) : Gestionnaire de sons pour jouer les effets sonores.
     """
+
     def __init__(self, game):
-        """
-        Initialise l'IA ennemie avec les données du jeu.
-
-        Entrées :
-        - game (Game) : Instance du jeu permettant de contrôler les unités ennemies.
-
-        Sorties :
-        - Initialise les attributs `game`, `current_enemy_index`, et `sound_manager`.
-        """
         self.game = game
         self.current_enemy_index = 0  # Index pour suivre quelle unité ennemie agit
         self.sound_manager = SoundManager()
@@ -34,11 +24,9 @@ class EnemyAI:
     def play_turn(self):
         """
         Exécute le tour d'une unité ennemie. L'unité effectue une action :
-        soit attaquer une cible à portée, soit se déplacer vers une cible.
-
+        se déplacer puis attaquer.
         Entrées :
         - Aucune.
-
         Sorties :
         - (bool) : True si l'unité a agi, False sinon.
         """
@@ -54,6 +42,25 @@ class EnemyAI:
         self.game.draw_accessible_cells(accessible_cells)
         pygame.display.flip()  # Met à jour l'écran pour afficher les cases accessibles
 
+        time.sleep(latence) #s'arreter pour 0.5 seconde 
+
+        # On se déplace d'abord
+        if not has_acted:
+            target = self.find_closest_unit(enemy, self.game.player_units)
+            if target:
+                self.move_towards(enemy, target, accessible_cells)
+                has_acted = True
+
+        self.game.flip_display()
+        pygame.display.flip()
+        time.sleep(latence)
+        
+        attaque_accessible_cells = self.game.get_attaque_accessible_cells(enemy)
+        self.game.draw_attaque_accessible_cells(attaque_accessible_cells)
+        pygame.display.flip()
+
+        time.sleep(latence)
+        
         # Vérifier si une attaque est possible
         for player in self.game.player_units:
             if abs(enemy.x - player.x) <= enemy.deplacement_distance and abs(enemy.y - player.y) <= enemy.deplacement_distance:
@@ -63,29 +70,22 @@ class EnemyAI:
                 has_acted = True
                 break
 
-        # Si aucune attaque n'a été effectuée, essayer de se déplacer
-        if not has_acted:
-            target = self.find_closest_unit(enemy, self.game.player_units)
-            if target:
-                self.move_towards(enemy, target, accessible_cells)
-                has_acted = True
-
-        # Passer à l'unité ennemie suivante
+        # Passer à l'unité ennemie suivante dans le cas du multijoueur
         self.current_enemy_index = (self.current_enemy_index + 1) % len(self.game.enemy_units)
         return has_acted
 
     def attack_with_laser(self, enemy, target):
         """
+        Dessine un laser et effectue une attaque contre la cible.
         Dessine un laser depuis l'ennemi vers la cible et applique les dégâts.
-
         Entrées :
         - enemy (Type_Unite) : L'unité ennemie qui attaque.
         - target (Type_Unite) : L'unité cible.
-
         Sorties :
         - Applique les dégâts à la cible.
         - Retire la cible si ses points de vie tombent à 0 ou en dessous.
         """
+
         # Afficher le laser
         self.game.draw_laser(enemy, [target], (255, 0, 0))  # Rouge pour l'ennemi
         self.game.animate_attack_effect(target.x, target.y)
@@ -102,12 +102,11 @@ class EnemyAI:
 
     def find_closest_unit(self, enemy, player_units):
         """
+        Trouve l'unité alliée la plus proche d'une unité ennemie.
         Trouve l'unité alliée (joueur) la plus proche d'une unité ennemie.
-
         Entrées :
         - enemy (Type_Unite) : L'unité ennemie cherchant une cible.
         - player_units (list[Type_Unite]) : Liste des unités alliées (joueurs).
-
         Sorties :
         - (Type_Unite) : L'unité la plus proche ou None si aucune unité n'est disponible.
         """
@@ -124,13 +123,12 @@ class EnemyAI:
 
     def move_towards(self, enemy, target, accessible_cells):
         """
+        Déplace l'unité ennemie vers une unité cible tout en évitant les herbes.
         Déplace l'unité ennemie vers une cible tout en évitant certaines cases (comme l'herbe).
-
         Entrées :
         - enemy (Type_Unite) : L'unité ennemie à déplacer.
         - target (Type_Unite) : L'unité cible vers laquelle se déplacer.
         - accessible_cells (list[tuple[int, int]]) : Liste des cases accessibles pour l'unité ennemie.
-
         Sorties :
         - Met à jour la position de l'ennemi si un mouvement valide est possible.
         """

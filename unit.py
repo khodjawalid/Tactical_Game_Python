@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
 import os
 import pygame
 import random
 from game import *
+from abc import ABC, abstractmethod
 from Feu import *
 from IA import *
 
@@ -21,6 +21,7 @@ BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 Select_color = (75,0,130)  #Couleur à afficher derriere le joueur selectionné à choisir lus tard 
 
+
 class Unit(ABC):
     """
     Classe abstraite représentant une unité de base.
@@ -34,19 +35,7 @@ class Unit(ABC):
     - arme (Arme) : Arme associée à l'unité (optionnelle).
     - game (Game) : Référence au jeu (optionnelle).
     """
-    def __init__(self, x, y, vie, attack_power, equipe, arme=None, game=None):
-        """
-        Initialise une unité avec ses caractéristiques de base.
-
-        Entrées :
-        - x (int) : Position x.
-        - y (int) : Position y.
-        - vie (int) : Points de vie.
-        - attack_power (int) : Puissance d'attaque.
-        - equipe (str) : Équipe ('player' ou 'enemy').
-        - arme (Arme, optionnel) : Arme associée.
-        - game (Game, optionnel) : Référence au jeu.
-        """
+    def __init__(self, x, y, vie, attack_power, equipe, arme=None, game = None ):
         self.x = x
         self.y = y
         self.vie = vie
@@ -60,18 +49,16 @@ class Unit(ABC):
     def attack(self, target, terrain=None):
         """
         Méthode abstraite pour attaquer une cible.
-
         Entrées :
         - target (Unit) : Cible de l'attaque.
         - terrain (Terrain, optionnel) : Terrain où l'attaque se déroule.
         """
         pass
 
-    @abstractmethod
+
     def recevoir_degats(self, degats, terrain):
         """
         Méthode abstraite pour recevoir des dégâts.
-
         Entrées :
         - degats (int) : Quantité de dégâts reçus.
         - terrain (Terrain) : Terrain actuel de l'unité.
@@ -79,12 +66,9 @@ class Unit(ABC):
         pass
 
 
-
-
 class Type_Unite(Unit):
     """
     Classe représentant une unité spécialisée héritant de Unit.
-
     Attributs supplémentaires :
     - nom (str) : Nom de l'unité.
     - defense (int) : Points de défense de l'unité.
@@ -93,41 +77,26 @@ class Type_Unite(Unit):
     - image (pygame.Surface) : Image associée à l'unité.
     - range (int) : Portée de l'unité.
     """
-    def __init__(self, nom, x, y, vie, attaque, equipe, defense, deplacement_distance, competences, arme=None, image_id=None, range=1, game=None):
-        """
-        Initialise une unité spécialisée avec des capacités supplémentaires.
-
-        Entrées :
-        - nom (str) : Nom de l'unité.
-        - x, y (int) : Position de l'unité.
-        - vie (int) : Points de vie.
-        - attaque (int) : Puissance d'attaque.
-        - equipe (str) : Équipe de l'unité.
-        - defense (int) : Points de défense.
-        - deplacement_distance (int) : Distance maximale de déplacement.
-        - competences (list) : Liste des compétences.
-        - arme (Arme, optionnel) : Arme associée.
-        - image_id (str, optionnel) : Identifiant pour l'image de l'unité.
-        - range (int, optionnel) : Portée d'attaque.
-        - game (Game, optionnel) : Référence au jeu.
-        """
-        super().__init__(x, y, vie, attaque, equipe, arme, game)
+    def __init__(self, nom, x, y, vie, attaque, equipe, defense, deplacement_distance, competences, arme=None, image_id=None ,range=1, game = None):
+        super().__init__(x, y, vie, attaque, equipe, arme)
         self.nom = nom
         self.defense = defense
+        self.attaque = attaque
         self.deplacement_distance = deplacement_distance
         self.competences = competences
         self.image = pygame.image.load(f'image/p{image_id}.jpg')
         self.range = range
         self.game = game
+
         # Redimensionner l'image
         scale_factor = 0.9
         new_size = (int(CELL_SIZE * scale_factor), int(CELL_SIZE * scale_factor))
         self.image = pygame.transform.scale(self.image, new_size)
 
+
     def attack(self, target, terrain=None):
         """
         Redéfinition de l'attaque.
-
         Entrées :
         - target (Unit) : Cible de l'attaque.
         - terrain (Terrain, optionnel) : Terrain où l'attaque se déroule.
@@ -137,7 +106,6 @@ class Type_Unite(Unit):
     def recevoir_degats(self, degats, terrain):
         """
         Redéfinition pour recevoir des dégâts.
-
         Entrées :
         - degats (int) : Quantité de dégâts reçus.
         - terrain (Terrain) : Terrain actuel de l'unité.
@@ -146,19 +114,20 @@ class Type_Unite(Unit):
 
 
     def attaquer_avec_arme(self, cible, terrain , game = None):
+        
         """
         Attaque une cible avec l'arme actuelle.
-
         Entrées :
         - cible (Unit) : Cible de l'attaque.
         - terrain (Terrain) : Terrain de l'attaque.
         - game (Game, optionnel) : Référence au jeu.
         """
+
         if not self.game:
             raise ValueError(f"L'unité {self.nom} n'a pas de référence à l'objet Game.")
 
         # Récupérer les cellules accessibles
-        accessible_cells = self.game.get_accessible_cells(self)
+        accessible_cells = self.game.get_attaque_accessible_cells(self)
 
         # Filtrer les unités accessibles selon l'équipe
         if self.equipe == "player":
@@ -173,8 +142,25 @@ class Type_Unite(Unit):
 
         # Appliquer les dégâts uniquement à la cible attaquée
         degats = self.arme.degats
-        cible.vie -= degats
-        print(f"{self.nom} attaque {cible.nom} avec {self.arme.nom} pour {degats} dégâts.")
+
+        if self.arme.nom == "Bombe" :
+            # Définir la zone d'effet autour de la cible
+            zone = [[(cible.x + i - 1, cible.y + j - 1) for j in range(3)] for i in range(3)]
+            # Récupérer toutes les unités à partir de l'instance de jeu
+            toutes_unites = game.get_all_units()
+            liste_unites = []
+            # Applique les dégâts à toutes les unités dans la zone
+            for u in toutes_unites:
+                if (u.x, u.y) in zone[0]+zone[1]+zone[2]:
+                    print("efffet bombe",u.x,u.y)
+                    liste_unites.append([u.x,u.y])
+                    print(f"{u.nom} est dans la zone d'effet de la bombe !")
+                    cible.vie -= degats
+
+
+        else : 
+            cible.vie -= degats
+            print(f"{self.nom} attaque {cible.nom} avec {self.arme.nom} pour {degats} dégâts.")
 
         # Vérifier si la cible est éliminée
         if cible.vie <= 0:
@@ -189,17 +175,15 @@ class Type_Unite(Unit):
     def move(self, dx, dy, terrain,players):
         """
         Déplace l'unité d'une case en fonction de sa capacité de déplacement.
-
         Entrées :
         - dx (int) : Décalage horizontal du déplacement.
         - dy (int) : Décalage vertical du déplacement.
         - terrain (Terrain) : Terrain sur lequel se déplace l'unité.
         - players (list[Type_Unite]) : Liste des unités de l'équipe actuelle (joueurs).
-
         Sorties :
         - (bool) : True si le déplacement a réussi, False sinon.
         """
-        
+
         # Calculer la nouvelle position
         new_x = self.x + dx
         new_y = self.y + dy
@@ -266,11 +250,9 @@ class Type_Unite(Unit):
     def update_health(self, surface, terrain):
         """
         Met à jour l'affichage de la barre de vie de l'unité.
-
         Entrées :
         - surface (pygame.Surface) : Surface de jeu où afficher la barre de vie.
         - terrain (Terrain) : Terrain où l'unité se trouve.
-
         Sorties :
         - Affiche la barre de vie sur la surface spécifiée.
         """
@@ -295,25 +277,20 @@ class Type_Unite(Unit):
     def utiliser_competence(self, index, cible):
         """
         Utilise une compétence sur une cible.
-
         Entrées :
         - index (int) : Indice de la compétence dans la liste des compétences.
         - cible (Type_Unite) : Cible de la compétence.
-
         Sorties :
         - Applique l'effet de la compétence si l'indice est valide.
         """
-        
         if 0 <= index < len(self.competences):
             self.competences[index].appliquer(cible)
 
     def draw(self, screen):
         """
         Affiche l'unité sur l'écran avec ses caractéristiques visuelles.
-
         Entrées :
         - screen (pygame.Surface) : Surface où afficher l'unité.
-
         Sorties :
         - Affiche l'unité avec une couleur de sélection si elle est sélectionnée.
         """
@@ -332,7 +309,6 @@ class Type_Unite(Unit):
     def __str__(self):
         """
         Retourne une description textuelle de l'unité.
-
         Sorties :
         - (str) : Description de l'unité avec ses attributs principaux.
         """

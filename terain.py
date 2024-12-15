@@ -6,11 +6,8 @@ from game import *
 #from main import *
 
 # Charger les images (icônes)
-
 icon_obstacle = pygame.image.load("image/obstacle.jpg")
-# icon_obstacle = pygame.image.load("image/ob.webp")
 icon_herbe = pygame.image.load("image/Herbe.png")
-icon_desert = pygame.image.load("image/carte.png")
 icon_health = pygame.image.load("image/health.png")
 icon_protection = pygame.image.load("image/protection.png")  # Ajoutez une icône pour la protection
 icon_trou = pygame.image.load("image/Trou.png")  # Ajoutez une icône pour la protection
@@ -21,9 +18,9 @@ NUM_ROWS = 18
 
 CELL_SIZE = 40
 
+#Redimenssionner les images  
 icon_obstacle = pygame.transform.scale(icon_obstacle, (CELL_SIZE, CELL_SIZE))
 icon_herbe = pygame.transform.scale(icon_herbe, (CELL_SIZE, CELL_SIZE))
-icon_desert = pygame.transform.scale(icon_desert, (CELL_SIZE, CELL_SIZE))
 icon_health = pygame.transform.scale(icon_health, (CELL_SIZE, CELL_SIZE))
 icon_protection = pygame.transform.scale(icon_protection, (CELL_SIZE, CELL_SIZE))
 icon_trou = pygame.transform.scale(icon_trou, (CELL_SIZE, CELL_SIZE))
@@ -31,26 +28,15 @@ icon_trou = pygame.transform.scale(icon_trou, (CELL_SIZE, CELL_SIZE))
 class Case:
     """
     Classe représentant une case dans la grille.
-
     Attributs :
     - type_case (int) : Type de la case (0 = vide, 1 = obstacle, 2 = herbe, 3 = santé, 4 = protection, 5 = trou).
     - x (int) : Position x de la case dans la grille.
     - y (int) : Position y de la case dans la grille.
     - effet (callable, optionnel) : Effet spécial appliqué à la case.
-
     Méthodes :
     - afficher(screen) : Affiche la case sur l'écran.
     """
     def __init__(self, type_case, x, y, effet=None):
-        """
-        Initialise une case avec son type, sa position et son effet.
-
-        Entrées :
-        - type_case (int) : Type de la case.
-        - x (int) : Position x de la case.
-        - y (int) : Position y de la case.
-        - effet (callable, optionnel) : Effet spécial appliqué à la case.
-        """
         self.type_case = type_case
         self.x = x
         self.y = y
@@ -59,10 +45,8 @@ class Case:
     def afficher(self, screen):
         """
         Affiche la case sur l'écran avec l'icône correspondante.
-
         Entrées :
         - screen (pygame.Surface) : Surface de l'écran où afficher la case.
-
         Sorties :
         - Affiche l'icône correspondant au type de case à sa position.
         """
@@ -86,34 +70,21 @@ class Case:
 class Terrain:
     """
     Classe représentant le terrain de jeu.
-
     Attributs :
     - largeur (int) : Nombre de colonnes dans la grille.
     - hauteur (int) : Nombre de lignes dans la grille.
     - cases (list) : Liste contenant toutes les cases de la grille.
     - obstacles, herbes, health, trous, protection (list) : Positions des cases spécifiques.
-
     Méthodes :
     - generer_grille() : Génère aléatoirement la grille avec différents types de cases.
     - melanger() : Change l'emplacement des herbes aléatoirement.
     - delete_after_use(x, y) : Supprime une case spéciale après son utilisation.
     - afficher_grille(screen) : Affiche la grille entière sur l'écran.
     """
-
     def __init__(self, largeur, hauteur):
-        """
-        Initialise un terrain avec les dimensions spécifiées.
-
-        Entrées :
-        - largeur (int) : Largeur (colonnes) de la grille.
-        - hauteur (int) : Hauteur (lignes) de la grille.
-
-        Sorties :
-        - Initialise les attributs du terrain avec des listes vides.
-        """
-        self.largeur = largeur  
-        self.hauteur = hauteur  
-        self.cases = []  
+        self.largeur = largeur  # Largeur de la grille
+        self.hauteur = hauteur  # Hauteur de la grille
+        self.cases = []  # Initialisation de la liste des cases
         self.obstacles = [] 
         self.herbes = [] 
         self.health = []
@@ -124,15 +95,14 @@ class Terrain:
     def generer_grille(self):
         """
         Génère une grille aléatoire avec des cases spéciales comme obstacles, herbes, santé, etc.
-
         Entrées :
         - Aucune.
-
         Sorties :
         - Met à jour l'attribut self.cases avec les cases générées.
         """
+        grille = np.zeros((self.hauteur,self.largeur)) #grille vide 
 
-        grille = np.zeros((self.hauteur,self.largeur))
+        #Positionnnement des obstacles 
         liste_obstacles = [
         # Structure coté gauche 
         [5,2], [6,2], [7,2], [8,2], [8,3], 
@@ -159,6 +129,7 @@ class Terrain:
         [19,6], [18,6], [19,7], [18,7],
         ]
         
+
         liste_protection = [[10, 4], [10, 10], [12, 5], [27,3],[15,15], [15,5], [23,7], [30,8],[17,0]]
         liste_trous = [[5,4],[5,12], [15,7],[31,5],[30,13]]
 
@@ -172,10 +143,10 @@ class Terrain:
                 if [x,y] in liste_obstacles :
                     case_type = 1  # Obstacle
                  
-                elif random.random() < 0.03: #Probabilité d'avoir du herbe de 5%
+                elif random.random() < 0.03: #Probabilité d'avoir du herbe de 3%
                     case_type = 2 #herbe
                     self.herbes.append([x,y])
-                elif random.random() < 0.035 and 7 <= x <= NUM_COLUMNS-10 and 7 <= y <= NUM_ROWS-7 and [x,y] not in liste_obstacles+liste_protection+liste_trous+self.herbes : #les mettre au milieu de la carte seulement
+                elif random.random() < 0.035 and 7 <= x <= NUM_COLUMNS-10 and 7 <= y <= NUM_ROWS-7 and [x,y] not in liste_obstacles+liste_protection+liste_trous+self.herbes : #mettre balises au milieu de la carte seulement
                     case_type = 3  #health
                     self.health.append([x,y])
                 elif [x, y] in liste_protection:  # Ajout des cases fixes de protection
@@ -186,9 +157,7 @@ class Terrain:
                     self.trous.append([x,y])
                 else : 
                     case_type = 0 
-                
-
-                    # Créer une nouvelle case avec le type sélectionné
+                # Créer une nouvelle case avec le type sélectionné
                 nouvelle_case = Case(case_type, x, y)
                 ligne.append(nouvelle_case)  # Ajout de la case à la ligne
             self.cases.append(ligne)
@@ -199,15 +168,12 @@ class Terrain:
     def melanger(self):
         """
         Mélange les positions des cases d'herbe en les réinitialisant.
-
         Entrées :
         - Aucune.
-
         Sorties :
         - Met à jour l'attribut self.herbes avec les nouvelles positions.
         """
         nouvelle_liste = []
-
         # Suppression des anciennes herbes
         for i in self.herbes:
             self.cases[i[0]][i[1]] = Case(0, i[0], i[1])
@@ -226,13 +192,12 @@ class Terrain:
         print(f"Les herbes ont été mélangées. Nouvelle liste : {self.herbes}")
 
     def delete_after_use(self,x,y):
+        """Fonction qui suprime les  balises aprés leurs utilisation"""
         """
         Supprime une case spéciale après utilisation.
-
         Entrées :
         - x (int) : Position x de la case.
         - y (int) : Position y de la case.
-
         Sorties :
         - Remplace la case par une case vide (type 0).
         """
@@ -242,10 +207,8 @@ class Terrain:
     def afficher_grille(self, screen):
         """
         Affiche la grille entière sur l'écran.
-
         Entrées :
         - screen (pygame.Surface) : Surface de l'écran où afficher la grille.
-
         Sorties :
         - Affiche toutes les cases sur l'écran.
         """

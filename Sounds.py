@@ -3,20 +3,10 @@ import pygame
 class SoundManager:
     """
     Gestionnaire de sons pour jouer des effets sonores spécifiques dans le jeu.
-
     Attributs :
     - sounds (dict) : Dictionnaire associant des noms de sons à des objets pygame.mixer.Sound.
     """
     def __init__(self):
-        """
-        Initialise le gestionnaire de sons et charge les fichiers audio.
-
-        Entrées :
-        - Aucun.
-
-        Sorties :
-        - Initialise l'attribut `sounds` avec les sons chargés depuis les fichiers spécifiés.
-        """
         pygame.mixer.init()
         self.sounds = {
             "heart": pygame.mixer.Sound("Sounds/preview.mp3"),
@@ -27,10 +17,8 @@ class SoundManager:
     def play_sound(self, sound_name):
         """
         Joue un son spécifique s'il est chargé dans le gestionnaire.
-
         Entrées :
         - sound_name (str) : Nom du son à jouer (doit correspondre à une clé dans le dictionnaire `sounds`).
-
         Sorties :
         - Joue le son correspondant si trouvé.
         - Affiche un message d'erreur dans la console si le son n'existe pas dans `sounds`.
