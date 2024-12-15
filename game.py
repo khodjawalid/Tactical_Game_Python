@@ -5,6 +5,8 @@ from main import *
 from Feu import *
 from Competence import *
 from IA import *
+from abc import ABC, abstractmethod
+
 
 
 #Bibliothèque pour lire et afficher un gif derrière le menu démarrage 
@@ -26,9 +28,53 @@ CELL_SIZE = 40  # Taille de chaque case (40x40 pixels)
 # Taille des images des unités
 UNIT_IMAGE_SIZE = (40, 40)  # Taille redimensionnée des images (40x40 pixels)
 
+class affichage(ABC) :
+    """Class abstraite qui contient toutes les fonctions d'affichage"""
+    @abstractmethod
+    def ajouter_message(self, message):
+        pass
+
+    @abstractmethod
+    def show_end_screen(self,txt) :
+        pass
+
+    @abstractmethod
+    def show_pause_menu(self):
+        pass 
+
+    @abstractmethod
+    def flip_display(self): 
+        pass 
+    @abstractmethod
+    def draw_laser(self, attacker, targets, color):
+        pass
+    @abstractmethod 
+    def animate_effect(self, x, y, effect_type):
+        pass
+
+    @abstractmethod
+    def afficher_tableau(self):
+        pass
+
+    @abstractmethod
+    def draw_skill_icon(self, unit, icon_path="image/skill_activation_icon.jpg"):
+        pass 
+
+    @abstractmethod
+    def draw_skill_icon(self, unit, icon_path="image/skill_activation_icon.jpg"):
+        pass
+    @abstractmethod
+    def animate_attack_effect(self, x, y):
+        pass
+    
+    @abstractmethod
+    def animate_bomb_effect(self, affected_cells):
+        pass
 
 
-class Game:
+
+
+class Game(affichage):
     def __init__(self, screen):
         self.start_time = pygame.time.get_ticks()
         self.screen = screen
