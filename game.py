@@ -1,5 +1,5 @@
 import pygame
-from terain import * # Vérifiez que 'terain' est bien importé, cela semble être une faute de frappe pour 'terrain'
+from terain import * 
 from unit import *
 from main import *
 from Feu import *
@@ -28,54 +28,135 @@ CELL_SIZE = 40  # Taille de chaque case (40x40 pixels)
 # Taille des images des unités
 UNIT_IMAGE_SIZE = (40, 40)  # Taille redimensionnée des images (40x40 pixels)
 
-class affichage(ABC) :
-    """Class abstraite qui contient toutes les fonctions d'affichage"""
+
+
+class affichage(ABC):
+    """Classe abstraite qui regroupe toutes les méthodes liées à l'affichage graphique du jeu."""
+
     @abstractmethod
     def ajouter_message(self, message):
+        """
+        Ajoute un message à afficher dans l'interface du jeu.
+        
+        Args:
+            message (str): Le message à ajouter.
+        """
         pass
 
     @abstractmethod
-    def show_end_screen(self,txt) :
+    def show_end_screen(self, txt):
+        """
+        Affiche l'écran de fin de jeu avec un message spécifié.
+        
+        Args:
+            txt (str): Texte à afficher sur l'écran de fin.
+        """
         pass
 
     @abstractmethod
     def show_pause_menu(self):
+        """
+        Affiche un menu de pause permettant de reprendre ou de quitter le jeu.
+        """
         pass 
 
     @abstractmethod
     def flip_display(self): 
+        """
+        Actualise l'affichage de l'état actuel du jeu sur l'écran.
+        """
         pass 
+
     @abstractmethod
     def draw_laser(self, attacker, targets, color):
+        """
+        Dessine un laser entre une unité attaquante et ses cibles.
+
+        Args:
+            attacker: L'unité qui lance l'attaque.
+            targets (list): Liste des cibles touchées par le laser.
+            color (tuple): Couleur du laser (RGB).
+        """
         pass
+
     @abstractmethod 
     def animate_effect(self, x, y, effect_type):
+        """
+        Anime un effet visuel sur une case spécifique de la grille.
+        
+        Args:
+            x (int): Coordonnée x de la case.
+            y (int): Coordonnée y de la case.
+            effect_type (str): Type de l'effet visuel (e.g., "heart", "leaf").
+        """
         pass
 
     @abstractmethod
     def afficher_tableau(self):
+        """
+        Affiche le tableau d'informations incluant les scores, tours et messages.
+        """
         pass
 
     @abstractmethod
     def draw_skill_icon(self, unit, icon_path="image/skill_activation_icon.jpg"):
+        """
+        Dessine une icône au-dessus d'une unité pour indiquer une compétence activée.
+        
+        Args:
+            unit: L'unité sur laquelle dessiner l'icône.
+            icon_path (str): Chemin vers l'image de l'icône (par défaut "image/skill_activation_icon.jpg").
+        """
         pass 
 
     @abstractmethod
-    def draw_skill_icon(self, unit, icon_path="image/skill_activation_icon.jpg"):
-        pass
-    @abstractmethod
     def animate_attack_effect(self, x, y):
+        """
+        Anime un effet visuel pour une attaque sur une case spécifique.
+        
+        Args:
+            x (int): Coordonnée x de la case.
+            y (int): Coordonnée y de la case.
+        """
         pass
     
-    @abstractmethod
-    def animate_bomb_effect(self, affected_cells):
-        pass
+
 
 
 
 
 class Game(affichage):
+    """
+    Classe principale représentant la logique globale du jeu.
+    """
     def __init__(self, screen):
+        """
+        Initialise le jeu, les unités, le terrain, et les paramètres de base.
+
+        Args:
+            screen (pygame.Surface): L'écran principal où tout sera affiché.
+        
+        Attributs :
+            start_time (int): Temps initial du jeu en millisecondes.
+            screen (pygame.Surface): Écran principal du jeu.
+            tour (int): Compteur des tours de jeu.
+            player_score (int): Score du joueur.
+            enemy_score (int): Score des ennemis.
+            message_log (list): Journal des messages affichés à l'écran.
+            max_messages (int): Nombre maximal de messages affichables.
+            player_units (list[Type_Unite]): Liste des unités du joueur.
+            enemy_units (list[Type_Unite]): Liste des unités ennemies.
+            units_with_active_skills (list): Liste des unités ayant des compétences actives.
+            enemy_ai (EnemyAI): Instance de l'intelligence artificielle ennemie.
+            mode (str): Mode du jeu (par défaut "solo").
+            sound_on (bool): État du son (activé ou désactivé).
+            running (bool): État du jeu (en cours ou arrêté).
+            sound_manager (SoundManager): Gestionnaire des sons.
+            attaque_txt (bool): Indicateur d'affichage pour certaines attaques.
+            tour_bouclier1 (int): Tour où le bouclier du joueur 1 est actif.
+            tour_bouclier2 (int): Tour où le bouclier du joueur 2 est actif.
+            terrain (Terrain): Terrain de jeu généré.
+        """
         self.start_time = pygame.time.get_ticks()
         self.screen = screen
         self.tour = 0
@@ -92,7 +173,8 @@ class Game(affichage):
         self.running = True
         self.sound_manager = SoundManager()
         self.attaque_txt = False
-
+        self.tour_bouclier1 = 0
+        self.tour_bouclier2 = 0
         
 
         # Création des compétences
@@ -112,14 +194,14 @@ class Game(affichage):
             Type_Unite("Alex", 0, 8,  100, 30, "player", 10, 3, [competence_soin],bombe ,"0",1, game =self),
             Type_Unite("Clara", 0, 9, 100, 25, "player", 15, 3, [competence_bouclier],arc,"1",2,game =self),
             Type_Unite("Maxime", 0, 10, 100, 35, "player", 10, 4, [competence_poison],lance ,"2",3,game =self),
-            Type_Unite("Sophie", 0, 11, 100, 20, "player", 20, 5, [competence_glace], epee ,"3",1,game =self),
+            Type_Unite("Marcus", 0, 11, 100, 20, "player", 20, 5, [competence_glace], epee ,"3",1,game =self),
         ]
 
         self.enemy_units = [
             Type_Unite("Alex", NUM_COLUMNS-1, 6, 100, 30, "enemy", 10, 3, [competence_soin], bombe ,"0",1,game =self),
             Type_Unite("Clara", NUM_COLUMNS-1, 7, 100, 25, "enemy", 15, 3, [competence_bouclier], arc , "1",2,game =self),
             Type_Unite("Maxime", NUM_COLUMNS-1, 8, 100, 35, "enemy", 10, 4, [competence_poison],lance , "2",3,game =self),
-            Type_Unite("Sophie", NUM_COLUMNS-1, 9, 100, 20, "enemy", 20, 5, [competence_poison], epee, "3",1,game =self),
+            Type_Unite("Marcus", NUM_COLUMNS-1, 9, 100, 20, "enemy", 20, 5, [competence_poison], epee, "3",1,game =self),
         ]
 
         for unit in self.player_units + self.enemy_units:
@@ -130,17 +212,6 @@ class Game(affichage):
         self.terrain = Terrain(NUM_COLUMNS, NUM_ROWS)  # Correction de 'terain' en 'terrain'
         self.terrain.generer_grille()
 
-    def update_skill_effects(self):
-        # Supprimer les unités dont l'effet est expiré (par exemple, après 3 secondes)
-        current_time = pygame.time.get_ticks()
-        self.units_with_active_skills = [
-            (unit, start_time) for unit, start_time in self.units_with_active_skills
-            if current_time - start_time < 30000  # 3 secondes
-        ]
-
-        # Dessiner les icônes pour les unités restantes
-        for unit, _ in self.units_with_active_skills:
-            self.draw_skill_icon(unit)
 
     def highlight_game_area(self, center_x, center_y, radius=5):
         """
@@ -177,20 +248,44 @@ class Game(affichage):
 
 
     def get_all_units(self):
-        """Retourne toutes les unités (joueurs et ennemis)."""
+        """
+        Retourne toutes les unités présentes dans le jeu.
+
+        Returns:
+            list[Type_Unite]: Liste combinée des unités du joueur et des ennemis.
+        """
         return self.player_units + self.enemy_units
 
 
     def ajouter_message(self, message):
-        """Ajoute un message au tableau d'affichage."""
+        """
+        Ajoute un message au tableau d'affichage.
+
+        Args:
+            message (str): Le message à ajouter au journal des messages.
+        """
         self.message_log.append(message)
         if len(self.message_log) > self.max_messages:
             self.message_log.pop(0)  # Supprime les anciens messages
 
 
     def handle_player_turn(self):
+        """
+    Gère le tour d'un joueur en permettant :
+    - Le déplacement d'une unité.
+    - L'utilisation d'une compétence.
+    - L'attaque ou le passage du tour.
+
+    Returns:
+        str: Retourne "menu" si le joueur choisit d'ouvrir le menu principal.
+    """
         # Tour du joueur : choisir une unité parmi les 4
         for selected_unit in self.player_units:
+
+            if selected_unit.reduction_degats != 0  and self.tour >= self.tour_bouclier2 +2*len(self.player_units) :
+                selected_unit.reduction_degats = 0
+                print("re,nnitialisation")
+            
             self.attaque_txt = False 
             has_acted = False
             selected_unit.is_selected = True
@@ -257,11 +352,7 @@ class Game(affichage):
                                 else:
                                     print(f"Déplacement vers ({cursor_x}, {cursor_y}) impossible.")
 
-                                # # Déplacer l'unité vers la case sélectionnée
-                                # selected_unit.move(cursor_x, cursor_y, self.terrain)
-                                # # selected_unit.x, selected_unit.y = cursor_x, cursor_y
-                                # self.flip_display()
-                                # has_acted = True  # Fin du tour pour cette unité
+                                
 
             self.attaque_txt = True
             self.flip_display()
@@ -291,6 +382,9 @@ class Game(affichage):
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_SPACE:
                             for enemy in self.enemy_units:
+                                if enemy.reduction_degats != 0  and self.tour_bouclier1 >= self.tour_bouclier1 +7 :
+                                        enemy.reduction_degats = 0 
+                                        #On déssactive lle bouclier
                                 if abs(selected_unit.x - enemy.x) <= selected_unit.arme.deplacement_distance and abs(selected_unit.y - enemy.y) <= selected_unit.arme.deplacement_distance:
 
                                     self.sound_manager.play_sound("attack")
@@ -311,19 +405,28 @@ class Game(affichage):
                                         print(enemy.nom, 'est éliminé ')
                                         self.sound_manager.play_sound("death")
                                         self.player_score += 1
+                                     
+
                                 attaque_competence = False 
 
                         competence_used = False #fin du tour
 
+
                         if event.key == pygame.K_c and not competence_used:
+
                             if selected_unit.competences:
+
                                 print(f"Compétences disponibles : {[c.nom for c in selected_unit.competences]}")
-                                # Utiliser la première compétence par défaut (ou une logique pour choisir)
+                                # Utiliser la première compétence par défaut (ou une logique pour choisir aprés)
                                 competence = selected_unit.competences[0]
+
                                 competence.appliquer(selected_unit)  # Applique la compétence sur l'unité elle-même
+                                self.tour_bouclier1 = self.tour 
+
                                 self.ajouter_message(f"{selected_unit.nom} utilise la compétence {competence.nom}!")
                                 self.draw_skill_icon(selected_unit)
                                 self.units_with_active_skills.append((selected_unit, pygame.time.get_ticks()))
+
                                 competence_used = True  # Empêche une autre utilisation de compétence ce tour
                             else:
                                 print(f"{selected_unit.nom} n'a pas de compétence disponible.")
@@ -348,10 +451,24 @@ class Game(affichage):
             return result
 
     def handle_enemy_turn(self):
+        """
+    Gère le tour de l'IA ennemie en permettant à chaque unité ennemie :
+    - De se déplacer vers une cible.
+    - D'attaquer une unité du joueur si possible.
+
+    Returns:
+        str: Retourne "menu" si l'IA choisit de retourner au menu principal.
+    """
         # Tour de l'ennemi : choisir une unité parmi les ennemis
     
 
         for selected_unit in self.enemy_units:
+
+            if selected_unit.reduction_degats != 0  and self.tour >= self.tour_bouclier2 +2*len(self.player_units) :
+                selected_unit.reduction_degats = 0
+                print("re,nnitialisation") 
+                                        #On déssactive lle bouclier
+
             has_acted = False
             selected_unit.is_selected = True
             self.flip_display()
@@ -441,6 +558,7 @@ class Game(affichage):
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_SPACE:
                             for player in self.player_units:
+                 
                                 if abs(selected_unit.x - player.x) <= selected_unit.deplacement_distance and abs(selected_unit.y - player.y) <= selected_unit.deplacement_distance:
                                     
                                     self.sound_manager.play_sound("attack")
@@ -461,6 +579,8 @@ class Game(affichage):
                                         print(player.nom, 'est éliminé ')
                                         self.sound_manager.play_sound("death")
                                         self.enemy_score += 1
+                                    
+                                    
                                 attaque_competence = False 
 
                         competence_used = False #fin du tour
@@ -469,11 +589,15 @@ class Game(affichage):
                             if selected_unit.competences:
                                 print(f"Compétences disponibles : {[c.nom for c in selected_unit.competences]}")
                                 # Utiliser la première compétence par défaut (ou une logique pour choisir)
+
                                 competence = selected_unit.competences[0]
                                 competence.appliquer(selected_unit)  # Applique la compétence sur l'unité elle-même
+                                self.tour_bouclier2 = self.tour
+
                                 self.ajouter_message(f"{selected_unit.nom} utilise la compétence {competence.nom}!")
                                 self.draw_skill_icon(selected_unit)
                                 self.units_with_active_skills.append((selected_unit, pygame.time.get_ticks()))
+
                                 competence_used = True  # Empêche une autre utilisation de compétence ce tour
                             else:
                                 print(f"{selected_unit.nom} n'a pas de compétence disponible.")
@@ -557,9 +681,11 @@ class Game(affichage):
 
     def check_end_game(self):
         """
-        Vérifie si toutes les unités d'un camp sont mortes, affiche un écran de fin,
-        et retourne au menu principal si la partie est terminée.
-        """
+    Vérifie si la partie est terminée en contrôlant si toutes les unités d'un camp sont éliminées.
+
+    Returns:
+        str: Retourne "menu" si le jeu est terminé, sinon None.
+    """
         # Vérifier si toutes les unités du joueur sont mortes
         if len(self.player_units) == 0:
             self.show_end_screen("Défaite : Tous vos joueurs sont éliminés.")
@@ -573,8 +699,14 @@ class Game(affichage):
         # Continuer le jeu si aucune condition de fin n'est remplie
         return None
 
+
     def show_end_screen(self,txt) :
-        """Afficher l'écran de la fin du jeu"""
+        """
+        Affiche un écran de fin de jeu avec un message personnalisé.
+
+        Args:
+            txt (str): Le message à afficher (e.g., victoire ou défaite).
+        """
 
         font = pygame.font.Font(None, 50)
         small_font = pygame.font.Font(None, 36)
@@ -631,7 +763,20 @@ class Game(affichage):
                     if menu_button_rect.collidepoint(event.pos):
                         main()  #Relancer le jeu 
 
+    def update_skill_effects(self):
+        """
+        Met à jour les compétences actives des unités. 
+        Supprime les compétences dont la durée est expirée et affiche une icône pour les compétences encore actives.
+        """
+        current_time = pygame.time.get_ticks()
+        self.units_with_active_skills = [
+            (unit, start_time) for unit, start_time in self.units_with_active_skills
+            if current_time - start_time < 30000  # 3 secondes
+        ]
 
+        # Dessiner les icônes pour les unités restantes
+        for unit, _ in self.units_with_active_skills:
+            self.draw_skill_icon(unit)
 
     def show_pause_menu(self):
         """
@@ -676,7 +821,7 @@ class Game(affichage):
 
             # Ajouter le texte sur les boutons
             resume_text = small_font.render("Reprendre", True, (255, 255, 255))
-            menu_text = small_font.render("Menu Principal", True, (255, 255, 255))
+            menu_text = small_font.render("Quitter", True, (255, 255, 255))
             self.screen.blit(resume_text, (resume_button_rect.centerx - resume_text.get_width() // 2, resume_button_rect.centery - resume_text.get_height() // 2))
             self.screen.blit(menu_text, (menu_button_rect.centerx - menu_text.get_width() // 2, menu_button_rect.centery - menu_text.get_height() // 2))
 
@@ -692,7 +837,8 @@ class Game(affichage):
                         r=False #sortir de la boucle et reprendrre le jeu 
                     if menu_button_rect.collidepoint(event.pos):
                         pygame.quit()
-                        main()  #Relancer le jeu 
+                        exit() 
+
 
 
     def toggle_music(self):
@@ -704,6 +850,7 @@ class Game(affichage):
         else:
             pygame.mixer.music.pause()
             self.sound_on = True
+
 
 
     def flip_display(self):
@@ -731,15 +878,8 @@ class Game(affichage):
 
         pygame.display.flip()
 
-
-    def play_attack_sound(self):
-        """
-        Joue un son général pour une attaque.
-        """
-       
-        sound = pygame.mixer.Sound("attack_sound.wav")  # Chemin du fichier sonore
-        sound.play()
         
+
     def draw_laser(self, attacker, targets, color):
         """
         Dessine un laser partant de l'attaquant vers toutes les cibles (unités visibles).
@@ -763,6 +903,7 @@ class Game(affichage):
         # Effacer l'écran après le délai
         self.flip_display()
     
+
     def animate_effect(self, x, y, effect_type):
         """
         Anime un effet visuel pour une case spéciale pendant 3 secondes.
@@ -874,6 +1015,16 @@ class Game(affichage):
 
 
     def get_accessible_cells(self, unit):
+        """
+    Calcule les cases accessibles pour une unité donnée en fonction de sa distance de déplacement 
+    et des caractéristiques du terrain.
+
+    Args:
+        unit (Type_Unite): L'unité pour laquelle on calcule les cases accessibles.
+
+    Returns:
+        list: Une liste de tuples (x, y) représentant les coordonnées des cases accessibles.
+    """
         accessible_cells = []
         max_distance = unit.deplacement_distance
 
@@ -926,7 +1077,20 @@ class Game(affichage):
         except FileNotFoundError:
             print(f"Erreur : Icône introuvable à {icon_path}")
     
+
     def display_loading_screen(self, mode):
+        """
+    Affiche un écran de chargement avec une barre de progression et un texte indiquant le pourcentage de chargement.
+
+    Args:
+        mode (str): Le mode de jeu en cours de chargement (exemple : "solo" ou "multiplayer").
+
+    Fonctionnalités :
+    - Charge une image de fond et l'ajuste à la taille de l'écran.
+    - Affiche une barre de progression qui se remplit progressivement.
+    - Affiche un texte indiquant le pourcentage de progression ("Loading xx%").
+    - Simule un délai de chargement avec un intervalle régulier.
+    """
  
         font = pygame.font.Font(None, 50)
         background = pygame.image.load("image/menu1234.png")
@@ -951,7 +1115,12 @@ class Game(affichage):
 
 
     def draw_accessible_cells(self, accessible_cells):
-        """Dessine les cases accessibles ."""
+        """
+    Dessine les cases accessibles sur le terrain.
+
+    Args:
+        accessible_cells (list[tuple[int, int]]): Liste des coordonnées des cases accessibles.
+    """
         for x, y in accessible_cells:
             rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             pygame.draw.rect(self.screen, (255, 255, 150), rect, 2)  # Dessine les cases en bleu
@@ -985,32 +1154,14 @@ class Game(affichage):
         self.flip_display()
 
 
-    def animate_bomb_effect(self, affected_cells):
-        """
-        Anime une explosion ou un effet sur les cases touchées par une bombe.
-
-        Args:
-            affected_cells (list): Liste des coordonnées des cases affectées.
-        """
-        explosion_icon = pygame.image.load("image/bombe.png")
-        icon_size = (40, 40)
-        explosion_icon = pygame.transform.scale(explosion_icon, icon_size)
-
-        animation_duration = 1000  # 1 seconde
-        start_time = pygame.time.get_ticks()
-
-        while pygame.time.get_ticks() - start_time < animation_duration:
-            self.flip_display()
-            for x, y in affected_cells:
-                pos_x = x * CELL_SIZE + CELL_SIZE // 2 - icon_size[0] // 2
-                pos_y = y * CELL_SIZE + CELL_SIZE // 2 - icon_size[1] // 2
-                self.screen.blit(explosion_icon, (pos_x, pos_y))
-            pygame.display.update()
-            pygame.time.delay(50)
-
-        self.flip_display()
-
     def get_attaque_accessible_cells(self, unit):
+        """
+    Détermine les cases accessibles pour une attaque en fonction de l'arme et de la portée d'une unité.
+    Args:
+        unit (Type_Unite): L'unité pour laquelle on calcule les cases accessibles.
+    Returns:
+        list: Liste de tuples (x, y) représentant les coordonnées des cases accessibles pour une attaque.
+    """
         accessible_cells = []
         max_distance = unit.arme.deplacement_distance
 
@@ -1041,7 +1192,12 @@ class Game(affichage):
         return accessible_cells
     
     def draw_attaque_accessible_cells(self, accessible_cells):
-        """Dessine les cases accessibles ."""
+        """
+    Dessine les cases accessibles pour une attaque sur le terrain.
+
+    Args:
+        accessible_cells (list[tuple[int, int]]): Liste des coordonnées des cases accessibles.
+    """
         for x, y in accessible_cells:
             rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             pygame.draw.rect(self.screen, RED , rect, 2)  # Dessine les cases en rouge

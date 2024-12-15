@@ -26,7 +26,7 @@ def bouclier_effet(cible):
     Sorties :
     - Modifie les attributs de la cible pour inclure une réduction de dégâts et une durée de 1 tour.
     """
-    cible.reduction_degats = 0.5  
+    cible.reduction_degats = 1  
     cible.duree_bouclier = 1  
     print(f"{cible.nom} active un bouclier protecteur (50% de réduction des dégâts).")
 

@@ -77,7 +77,7 @@ class Type_Unite(Unit):
     - image (pygame.Surface) : Image associée à l'unité.
     - range (int) : Portée de l'unité.
     """
-    def __init__(self, nom, x, y, vie, attaque, equipe, defense, deplacement_distance, competences, arme=None, image_id=None ,range=1, game = None):
+    def __init__(self, nom, x, y, vie, attaque, equipe, defense, deplacement_distance, competences, arme=None, image_id=None ,range=1, game = None, reduction_degats = 0):
         super().__init__(x, y, vie, attaque, equipe, arme)
         self.nom = nom
         self.defense = defense
@@ -87,6 +87,8 @@ class Type_Unite(Unit):
         self.image = pygame.image.load(f'image/p{image_id}.jpg')
         self.range = range
         self.game = game
+        self.reduction_degats = reduction_degats
+        self.arme = arme
 
         # Redimensionner l'image
         scale_factor = 0.9
@@ -155,12 +157,12 @@ class Type_Unite(Unit):
                     print("efffet bombe",u.x,u.y)
                     liste_unites.append([u.x,u.y])
                     print(f"{u.nom} est dans la zone d'effet de la bombe !")
-                    cible.vie -= degats
+                    cible.vie -= degats*(1-cible.reduction_degats)
 
 
         else : 
-            cible.vie -= degats
-            print(f"{self.nom} attaque {cible.nom} avec {self.arme.nom} pour {degats} dégâts.")
+            cible.vie -= degats*(1-cible.reduction_degats)
+            print(f"{self.nom} attaque {cible.nom} avec {self.arme.nom} pour {degats*(1-cible.reduction_degats)} dégâts.")
 
         # Vérifier si la cible est éliminée
         if cible.vie <= 0:

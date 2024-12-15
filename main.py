@@ -255,7 +255,7 @@ def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT + TABLEAU_HEIGHT))
     pygame.display.set_caption("Mon jeu de stratégie")
     pygame.mixer.init()
-    pygame.mixer.music.load("music.mp3")
+    pygame.mixer.music.load("Sounds\music.mp3")
     pygame.mixer.music.set_volume(1)
     pygame.mixer.music.play(-1)
 

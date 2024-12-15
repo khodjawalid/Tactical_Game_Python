@@ -146,7 +146,7 @@ class Terrain:
                 elif random.random() < 0.03: #Probabilité d'avoir du herbe de 3%
                     case_type = 2 #herbe
                     self.herbes.append([x,y])
-                elif random.random() < 0.035 and 7 <= x <= NUM_COLUMNS-10 and 7 <= y <= NUM_ROWS-7 and [x,y] not in liste_obstacles+liste_protection+liste_trous+self.herbes : #mettre balises au milieu de la carte seulement
+                elif random.random() < 0.08 and 7 <= x <= NUM_COLUMNS-10 and 7 <= y <= NUM_ROWS-7 and [x,y] not in liste_obstacles+liste_protection+liste_trous+self.herbes : #mettre balises au milieu de la carte seulement
                     case_type = 3  #health
                     self.health.append([x,y])
                 elif [x, y] in liste_protection:  # Ajout des cases fixes de protection
@@ -189,7 +189,6 @@ class Terrain:
                     nouvelle_liste.append([x, y])
 
         self.herbes = nouvelle_liste
-        print(f"Les herbes ont été mélangées. Nouvelle liste : {self.herbes}")
 
     def delete_after_use(self,x,y):
         """Fonction qui suprime les  balises aprés leurs utilisation"""
