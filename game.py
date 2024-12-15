@@ -250,7 +250,7 @@ class Game(affichage):
                             if (cursor_x, cursor_y) in accessible_cells:
                                 dx = cursor_x - selected_unit.x
                                 dy = cursor_y - selected_unit.y
-                                if selected_unit.move(dx, dy, self.terrain,self.player_units):  # Appelle move avec les décalages
+                                if selected_unit.move(dx, dy, self.terrain,self.get_all_units()):  # Appelle move avec les décalages
                                     self.flip_display()  # Met à jour l'affichage après déplacement
                                     has_acted = True
                                 else:
@@ -340,11 +340,11 @@ class Game(affichage):
                         if event.key == pygame.K_ESCAPE:
                             return "menu"
 
-                        if event.type == pygame.MOUSEBUTTONDOWN:
+                        if event.type == pygame.MOUSEBUTTONDOWN: #bouton ppour arreter la music 
                             if hasattr(self, 'icon_rect') and self.icon_rect.collidepoint(event.pos):
                                 self.toggle_music()
-                        if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
-                            print("Touche P pressée")  # Débogage
+
+                        if event.type == pygame.KEYDOWN and event.key == pygame.K_p: #menu pause 
                             self.show_pause_menu()
                         # Déplacement du curseur avec les flèches du clavier
                         if event.key == pygame.K_LEFT:
@@ -373,7 +373,7 @@ class Game(affichage):
                             if (cursor_x, cursor_y) in accessible_cells:
                                 dx = cursor_x - selected_unit.x
                                 dy = cursor_y - selected_unit.y
-                                if selected_unit.move(dx, dy, self.terrain,self.player_units):  # Appelle move avec les décalages
+                                if selected_unit.move(dx, dy, self.terrain,self.get_all_units()):  # Appelle move avec les décalages
                                     self.flip_display()  # Met à jour l'affichage après déplacement
                                     has_acted = True
                                 else:

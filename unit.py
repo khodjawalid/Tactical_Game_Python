@@ -162,7 +162,7 @@ class Type_Unite(Unit):
                 return True
             
             elif target_case.type_case == 5:  # Trous
-                cases_valides = [(i, j) for i in range(len(terrain.cases)) for j in range(len(terrain.cases[0])) if [i,j] not in terrain.obstacles+terrain.protection+player_coordinates+terrain.health ] 
+                cases_valides = [(i, j) for i in range(len(terrain.cases)) for j in range(len(terrain.cases[0])-2) if [i,j] not in terrain.obstacles+terrain.protection+player_coordinates+terrain.health+terrain.trous ] 
                 case_tiree = random.choice(cases_valides)  #tirage
                 self.vie -= 10
                 self.x = case_tiree[0]
