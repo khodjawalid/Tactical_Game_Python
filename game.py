@@ -101,24 +101,24 @@ class Game(affichage):
         competence_glace = Competence( "galce", "ne bouge pas ",glace_eclatante_effet)
         
 
-        epee = Arme("Épée", degats=30, deplacement_distance=5, effet=epee_effet)
+        epee = Arme("Épée", degats=30, deplacement_distance=3, effet=epee_effet)
         arc = Arme("Arc", degats=20, deplacement_distance=10, effet=arc_effet)
         lance = Arme("Lance", degats=25, deplacement_distance=8, effet=lance_effet)
-        bombe = Arme("Bombe", degats=40, deplacement_distance=3, effet=bombe_effet)
+        bombe = Arme("Bombe", degats=40, deplacement_distance=5, effet=bombe_effet)
 
         # Initialisation des unités des joueurs
         self.player_units = [
-            Type_Unite("Alex", 0, 0,  100, 30, "player", 10, 1, [competence_soin],epee ,"0",1, game =self),
-            Type_Unite("Clara", 0, 1, 100, 25, "player", 15, 2, [competence_bouclier],arc,"1",2,game =self),
-            Type_Unite("Maxime", 0, 2, 100, 35, "player", 10, 3, [competence_poison],lance ,"2",3,game =self),
-            Type_Unite("Sophie", 0, 3, 100, 20, "player", 20, 4, [competence_glace], bombe ,"3",1,game =self),
+            Type_Unite("Alex", 0, 0,  100, 30, "player", 10, 3, [competence_soin],epee ,"0",1, game =self),
+            Type_Unite("Clara", 0, 1, 100, 25, "player", 15, 3, [competence_bouclier],arc,"1",2,game =self),
+            Type_Unite("Maxime", 0, 2, 100, 35, "player", 10, 4, [competence_poison],lance ,"2",3,game =self),
+            Type_Unite("Sophie", 0, 3, 100, 20, "player", 20, 5, [competence_glace], bombe ,"3",1,game =self),
         ]
 
         self.enemy_units = [
-            Type_Unite("Alex", 0, NUM_ROWS-5, 100, 30, "enemy", 10, 1, [competence_soin], epee ,"0",1,game =self),
-            Type_Unite("Clara", 0, NUM_ROWS-2, 100, 25, "enemy", 15, 2, [competence_bouclier], arc , "1",2,game =self),
-            Type_Unite("Maxime", 0, NUM_ROWS-3, 100, 35, "enemy", 10, 3, [competence_poison],lance , "2",3,game =self),
-            Type_Unite("Sophie", 0, NUM_ROWS-4, 100, 20, "enemy", 20, 4, [competence_poison], arc, "3",1,game =self),
+            Type_Unite("Alex", 0, NUM_ROWS-5, 100, 30, "enemy", 10, 3, [competence_soin], epee ,"0",1,game =self),
+            Type_Unite("Clara", 0, NUM_ROWS-2, 100, 25, "enemy", 15, 3, [competence_bouclier], arc , "1",2,game =self),
+            Type_Unite("Maxime", 0, NUM_ROWS-3, 100, 35, "enemy", 10, 4, [competence_poison],lance , "2",3,game =self),
+            Type_Unite("Sophie", 0, NUM_ROWS-4, 100, 20, "enemy", 20, 5, [competence_poison], arc, "3",1,game =self),
         ]
 
         for unit in self.player_units + self.enemy_units:
@@ -216,7 +216,6 @@ class Game(affichage):
                             self.toggle_music()
 
                     if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
-                        print("Touche P pressée")  # Débogage
                         self.show_pause_menu()
                         
                     if event.type == pygame.KEYDOWN:
@@ -262,20 +261,34 @@ class Game(affichage):
                                 # self.flip_display()
                                 # has_acted = True  # Fin du tour pour cette unité
 
-                        # Attaque avec la barre espace
+            #afficher les cases d'effet de l'arme 
+            attaque_accessible_cells = self.get_attaque_accessible_cells(selected_unit)
+            self.draw_attaque_accessible_cells(attaque_accessible_cells)
+            pygame.display.flip()
+
+
+            #Aprés le déplacement on utilise une compétence ou on attaque ou bien on skip 
+            attaque_competence = True 
+
+            while attaque_competence :
+                # Attaque avec la barre espace
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+                    if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_SPACE:
                             for enemy in self.enemy_units:
-                                if abs(selected_unit.x - enemy.x) <= selected_unit.deplacement_distance and abs(selected_unit.y - enemy.y) <= selected_unit.deplacement_distance:
+                                if abs(selected_unit.x - enemy.x) <= selected_unit.arme.deplacement_distance and abs(selected_unit.y - enemy.y) <= selected_unit.arme.deplacement_distance:
                                     self.sound_manager.play_sound("attack")
                                     if selected_unit.arme.nom == "Bombe":
                                     # Utiliser l'effet de la bombe
                                         bombe_effet(
-                                            utilisateur=selected_unit,
-                                            cible=enemy,
-                                            terrain=self.terrain,
-                                            game_instance=self
-                                        )
-                                        
+                                                utilisateur=selected_unit,
+                                                cible=enemy,
+                                                terrain=self.terrain,
+                                                game_instance=self
+                                            )
                                         # self.animate_bomb_effect([enemy])
                                     else:
                                         selected_unit.attaquer_avec_arme(enemy, self.terrain, self)
@@ -289,8 +302,10 @@ class Game(affichage):
                                         print(enemy.nom, 'est éliminé ')
                                         self.sound_manager.play_sound("death")
                                         self.player_score += 1
-                                    has_acted = True  # Fin du tour pour cette unité
-                        competence_used = False
+                                attaque_competence = False 
+
+                        competence_used = False #fin du tour
+
                         if event.key == pygame.K_c and not competence_used:
                             if selected_unit.competences:
                                 print(f"Compétences disponibles : {[c.nom for c in selected_unit.competences]}")
@@ -303,7 +318,14 @@ class Game(affichage):
                                 competence_used = True  # Empêche une autre utilisation de compétence ce tour
                             else:
                                 print(f"{selected_unit.nom} n'a pas de compétence disponible.")
+                            attaque_competence = False
 
+
+                        if event.key == pygame.K_RETURN:
+                            #le joueur veut skip son tour 
+                            attaque_competence = False
+
+                
             selected_unit.is_selected = False  # Désélectionner l'unité
             self.tour += 1  # Passer au tour suivant
         self.update_skill_effects()
@@ -384,7 +406,7 @@ class Game(affichage):
                         if event.key == pygame.K_SPACE:
                             for player in self.player_units:
                                 # Vérifie si le joueur est adjacent à l'ennemi
-                                if abs(selected_unit.x - player.x) <= selected_unit.deplacement_distance and abs(selected_unit.y - player.y) <= selected_unit.deplacement_distance: 
+                                if abs(selected_unit.x - player.x) <= selected_unit.arme.deplacement_distance and abs(selected_unit.y - player.y) <= selected_unit.arme.deplacement_distance: 
                                     
                                     # Effectue l'attaque
                                     self.sound_manager.play_sound("attack")
@@ -422,7 +444,72 @@ class Game(affichage):
                                 competence_used = True  # Empêche une autre utilisation de compétence ce tour
                             else:
                                 print(f"{selected_unit.nom} n'a pas de compétence disponible.")
-                        
+
+            #Zone d'effet de l'arme 
+            attaque_accessible_cells = self.get_attaque_accessible_cells(selected_unit)
+            self.draw_attaque_accessible_cells(attaque_accessible_cells)
+            pygame.display.flip()
+
+
+            #Aprés le déplacement on utilise une compétence ou on attaque ou bien on skip 
+            attaque_competence = True 
+
+            while attaque_competence :
+                # Attaque avec la barre espace
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_SPACE:
+                            for player in self.player_units:
+                                if abs(selected_unit.x - player.x) <= selected_unit.deplacement_distance and abs(selected_unit.y - player.y) <= selected_unit.deplacement_distance:
+                                    self.sound_manager.play_sound("attack")
+                                    if selected_unit.arme.nom == "Bombe":
+                                    # Utiliser l'effet de la bombe
+                                        bombe_effet(
+                                                utilisateur=selected_unit,
+                                                cible=player,
+                                                terrain=self.terrain,
+                                                game_instance=self
+                                            )
+                                        # self.animate_bomb_effect([enemy])
+                                    else:
+                                        selected_unit.attaquer_avec_arme(player, self.terrain, self)
+                                        self.animate_attack_effect(player.x, player.y)
+                                    # selected_unit.attaquer_avec_arme(enemy, self.terrain)
+                                    message = f"{selected_unit.nom} utilise {selected_unit.arme.nom} sur {player.nom}!"
+                                    self.ajouter_message(message)
+                                    if player.vie <= 0:
+                                        self.remove(player)
+                                        self.ajouter_message(f"{player.nom} est éliminé!")
+                                        print(player.nom, 'est éliminé ')
+                                        self.sound_manager.play_sound("death")
+                                        self.player_score += 1
+                                attaque_competence = False 
+
+                        competence_used = False #fin du tour
+
+                        if event.key == pygame.K_c and not competence_used:
+                            if selected_unit.competences:
+                                print(f"Compétences disponibles : {[c.nom for c in selected_unit.competences]}")
+                                # Utiliser la première compétence par défaut (ou une logique pour choisir)
+                                competence = selected_unit.competences[0]
+                                competence.appliquer(selected_unit)  # Applique la compétence sur l'unité elle-même
+                                self.ajouter_message(f"{selected_unit.nom} utilise la compétence {competence.nom}!")
+                                self.draw_skill_icon(selected_unit)
+                                self.units_with_active_skills.append((selected_unit, pygame.time.get_ticks()))
+                                competence_used = True  # Empêche une autre utilisation de compétence ce tour
+                            else:
+                                print(f"{selected_unit.nom} n'a pas de compétence disponible.")
+                            attaque_competence = False
+
+
+                        if event.key == pygame.K_RETURN:
+                            #le joueur veut skip son tour 
+                            attaque_competence = False
+
+
             selected_unit.is_selected = False  # Désélectionner l'unité
             self.tour += 1  # Passer au tour suivant
         self.update_skill_effects()
@@ -936,3 +1023,38 @@ class Game(affichage):
             pygame.time.delay(50)
 
         self.flip_display()
+
+    def get_attaque_accessible_cells(self, unit):
+        accessible_cells = []
+        max_distance = unit.arme.deplacement_distance
+
+
+        # Vérification de toutes les cases dans un carré de côté 2*max_distance+1 centré sur l'unité
+        for dx in range(-max_distance, max_distance + 1):
+            for dy in range(-max_distance, max_distance + 1):
+                # Calcul des coordonnées de la case cible
+                target_x = unit.x + dx
+                target_y = unit.y + dy
+
+                # Vérifier que la case est dans les limites de la grille
+                if 0 <= target_x < NUM_COLUMNS and 0 <= target_y < NUM_ROWS - 1:
+                    # Récupérer la ca
+                    # e cible dans le terrain
+                    target_case = self.terrain.cases[target_x][target_y]  
+
+                    # Vérifier que la case n'est pas un obstacle
+                    if target_case.type_case == 1:  # Obstacle
+                        continue  # Ignorer cette case
+                    elif target_case.type_case == 2:  # Herbe
+                        accessible_cells.append((target_x, target_y))
+                    elif target_case.type_case == 3:  # Santé
+                        accessible_cells.append((target_x, target_y))
+                    else:
+                        accessible_cells.append((target_x, target_y))
+
+        return accessible_cells
+    def draw_attaque_accessible_cells(self, accessible_cells):
+        """Dessine les cases accessibles ."""
+        for x, y in accessible_cells:
+            rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(self.screen, RED , rect, 2)  # Dessine les cases en rouge
