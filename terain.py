@@ -5,6 +5,25 @@ from unit import *
 from game import *
 #from main import *
 
+
+
+# Constantes
+GRID_SIZE = 8
+CELL_SIZE = 40
+NUM_ROWS = 18
+NUM_COLUMNS = 37
+WIDTH = NUM_COLUMNS* CELL_SIZE
+HEIGHT = NUM_ROWS * CELL_SIZE
+FPS = 30
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+Select_color = (75,0,130)  #Couleur à afficher derriere le joueur selectionné à choisir lus tard 
+
+
+
 # Charger les images (icônes)
 icon_obstacle = pygame.image.load("image/obstacle.jpg")
 icon_herbe = pygame.image.load("image/Herbe.png")
@@ -24,6 +43,8 @@ icon_herbe = pygame.transform.scale(icon_herbe, (CELL_SIZE, CELL_SIZE))
 icon_health = pygame.transform.scale(icon_health, (CELL_SIZE, CELL_SIZE))
 icon_protection = pygame.transform.scale(icon_protection, (CELL_SIZE, CELL_SIZE))
 icon_trou = pygame.transform.scale(icon_trou, (CELL_SIZE, CELL_SIZE))
+
+            # screen.blit(icon_desert, position)
 
 class Case:
     """
@@ -62,11 +83,6 @@ class Case:
             screen.blit(icon_protection, position)
         elif self.type_case == 5:  # Protection
             screen.blit(icon_trou, position)
-        
-        
-            # screen.blit(icon_desert, position)
-
-
 class Terrain:
     """
     Classe représentant le terrain de jeu.
@@ -214,5 +230,3 @@ class Terrain:
         for ligne in self.cases:
             for case in ligne:
                 case.afficher(screen)
-
-

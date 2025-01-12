@@ -2,7 +2,8 @@ import os
 import pygame
 import random
 from game import *
-from abc import ABC, abstractmethod
+import numpy as np
+
 from Feu import *
 from IA import *
 
@@ -21,52 +22,9 @@ BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 Select_color = (75,0,130)  #Couleur à afficher derriere le joueur selectionné à choisir lus tard 
 
+        
 
-class Unit(ABC):
-    """
-    Classe abstraite représentant une unité de base.
-    
-    Attributs :
-    - x (int) : Position x de l'unité.
-    - y (int) : Position y de l'unité.
-    - vie (int) : Points de vie de l'unité.
-    - attack_power (int) : Puissance d'attaque de l'unité.
-    - equipe (str) : Équipe de l'unité ('player' ou 'enemy').
-    - arme (Arme) : Arme associée à l'unité (optionnelle).
-    - game (Game) : Référence au jeu (optionnelle).
-    """
-    def __init__(self, x, y, vie, attack_power, equipe, arme=None, game = None ):
-        self.x = x
-        self.y = y
-        self.vie = vie
-        self.attack_power = attack_power
-        self.equipe = equipe  # 'player' ou 'enemy'
-        self.is_selected = False
-        self.arme = arme
-        self.game = game  # Arme associée à l'unité (par défaut aucune)
-
-    @abstractmethod
-    def attack(self, target, terrain=None):
-        """
-        Méthode abstraite pour attaquer une cible.
-        Entrées :
-        - target (Unit) : Cible de l'attaque.
-        - terrain (Terrain, optionnel) : Terrain où l'attaque se déroule.
-        """
-        pass
-
-
-    def recevoir_degats(self, degats, terrain):
-        """
-        Méthode abstraite pour recevoir des dégâts.
-        Entrées :
-        - degats (int) : Quantité de dégâts reçus.
-        - terrain (Terrain) : Terrain actuel de l'unité.
-        """
-        pass
-
-
-class Type_Unite(Unit):
+class Type_Unite :
     """
     Classe représentant une unité spécialisée héritant de Unit.
     Attributs supplémentaires :
@@ -78,7 +36,14 @@ class Type_Unite(Unit):
     - range (int) : Portée de l'unité.
     """
     def __init__(self, nom, x, y, vie, attaque, equipe, defense, deplacement_distance, competences, arme=None, image_id=None ,range=1, game = None, reduction_degats = 0):
-        super().__init__(x, y, vie, attaque, equipe, arme)
+        self.x=x
+        self.y=y
+        self.vie = vie
+        self.equipe = equipe  # 'player' ou 'enemy'
+        self.is_selected = False
+        self.arme = arme
+        self.game = game  # Arme associée à l'unité (par défaut aucune)
+
         self.nom = nom
         self.defense = defense
         self.attaque = attaque
@@ -86,9 +51,7 @@ class Type_Unite(Unit):
         self.competences = competences
         self.image = pygame.image.load(f'image/p{image_id}.jpg')
         self.range = range
-        self.game = game
         self.reduction_degats = reduction_degats
-        self.arme = arme
 
         # Redimensionner l'image
         scale_factor = 0.9
@@ -103,7 +66,8 @@ class Type_Unite(Unit):
         - target (Unit) : Cible de l'attaque.
         - terrain (Terrain, optionnel) : Terrain où l'attaque se déroule.
         """
-        super().attack(target, terrain)
+        if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
+            target.vie -= self.attaque
 
     def recevoir_degats(self, degats, terrain):
         """
@@ -112,7 +76,9 @@ class Type_Unite(Unit):
         - degats (int) : Quantité de dégâts reçus.
         - terrain (Terrain) : Terrain actuel de l'unité.
         """
-        super().recevoir_degats(degats, terrain)
+        self.health -= degats
+        if self.health < 0:
+            self.health = 0
 
 
     def attaquer_avec_arme(self, cible, terrain , game = None):
